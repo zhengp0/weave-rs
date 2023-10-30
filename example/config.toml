@@ -1,14 +1,14 @@
 [datasets]
-data = "data.parquet"
-pred = "pred.parquet"
+data = "example/data/data.parquet"
+pred = "example/data/pred.parquet"
 
 [[dimensions]]
-key = ["age"]
+key = ["age_mid"]
 distance = { type = "Euclidean" }
 kernel = { type = "Exponential", radius = 0.7 }
 
 [[dimensions]]
-key = ["year"]
+key = ["year_id"]
 distance = { type = "Euclidean" }
 kernel = { type = "Tricubic", radius = 43.0, exponent = 0.5 }
 
