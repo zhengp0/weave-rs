@@ -12,7 +12,6 @@ where
     K: Kernel<Input = D::Output>,
 {
     pub name: String,
-    pub key: Vec<String>,
     distance: D,
     kernel: K,
     coords: Coords<D::Input>,
@@ -66,10 +65,6 @@ mod tests {
 
     fn dimension() -> Dimension<Tree, DepthCODEm> {
         let name = "loc".to_string();
-        let key: Vec<String> = ["super_region_id", "region_id", "location_id"]
-            .iter()
-            .map(|s| s.to_string())
-            .collect();
         let distance = Tree;
         let kernel = DepthCODEm::new(0.5, 3);
         let coords = Coords {
@@ -78,7 +73,6 @@ mod tests {
         };
         Dimension {
             name,
-            key,
             distance,
             kernel,
             coords,

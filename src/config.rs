@@ -24,6 +24,7 @@ pub struct DatasetsConfig {
 
 #[derive(Deserialize)]
 pub struct DimensionConfig {
+    pub name: String,
     pub key: Vec<String>,
     pub distance: DistanceConfig,
     pub kernel: KernelConfig,
