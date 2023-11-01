@@ -25,10 +25,9 @@ where
     pub fn update_weight(&self, i: usize, weight: &mut Vec<f32>) {
         let x = &self.coords.data[i];
         let y_iter = self.coords.pred.iter();
-        y_iter
-            .map(|y| self.distance.call(x, y))
-            .zip(weight.iter_mut())
-            .for_each(|(d, w)| *w *= self.kernel.call(&d));
+        for (y, w) in y_iter.zip(weight.iter_mut()) {
+            *w *= self.kernel.call(&self.distance.call(x, y));
+        }
     }
 }
 
@@ -42,19 +41,14 @@ where
         let x = &self.coords.data[i];
         let y_iter = self.coords.pred.iter();
         let mut norm_map = HashMap::new();
-        let distance: Vec<D::Output> = y_iter
-            .zip(weight.iter())
-            .map(|(y, w)| {
-                let d = self.distance.call(x, y);
-                let s = norm_map.entry(d).or_insert(0_f32);
-                *s += w;
-                d
-            })
-            .collect();
-        distance.iter().zip(weight.iter_mut()).for_each(|(d, w)| {
-            let s = norm_map.get(d).unwrap();
-            *w *= self.kernel.call(d) / s;
-        })
+        let distance: Vec<D::Output> = y_iter.map(|y| self.distance.call(x, y)).collect();
+
+        for (d, w) in distance.iter().zip(weight.iter()) {
+            norm_map.entry(d).and_modify(|x| *x += w).or_insert(*w);
+        }
+        for (d, w) in distance.iter().zip(weight.iter_mut()) {
+            *w *= self.kernel.call(d) / &norm_map[d];
+        }
     }
 }
 

@@ -60,7 +60,7 @@ fn build_projection(cols: &Vec<String>, schema: &Type) -> GenResult<Type> {
         if !field_map.contains_key(col) {
             return Err(Box::new(DataError::ColumnMissingError(col.to_string())));
         }
-        let field = (**field_map.get(col).unwrap()).clone();
+        let field = (*field_map[col]).clone();
         fields.push(field);
     }
     Ok(Type::GroupType { basic_info, fields })
