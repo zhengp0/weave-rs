@@ -12,7 +12,10 @@ fn main() {
         config.datasets.pred.display(),
     );
 
-    let coord =
-        read_parquet_cols::<_, i32>(&config.datasets.data, &config.dimensions[2].key).unwrap();
+    let coord = read_parquet_cols::<_, i32>(
+        &config.datasets.data,
+        &config.dimensions["location"].info_config().key,
+    )
+    .unwrap();
     println!("{:?}", coord);
 }
