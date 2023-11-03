@@ -1,11 +1,11 @@
 use serde::Deserialize;
-use std::{collections::HashMap, error, fs, path};
+use std::{error, fs, path};
 use toml;
 
 #[derive(Deserialize)]
 pub struct Config {
     pub datasets: DatasetsConfig,
-    pub dimensions: HashMap<String, DimensionConfig>,
+    pub dimensions: Vec<DimensionConfig>,
 }
 
 impl Config {
