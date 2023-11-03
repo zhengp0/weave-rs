@@ -4,13 +4,13 @@ pub mod kernel;
 
 use crate::model::dimenion::Dimension;
 
-pub struct WeAve {
+pub struct Weave {
     pub dimensions: Vec<Box<dyn Dimension>>,
     values: Vec<f32>,
     lens: (usize, usize),
 }
 
-impl WeAve {
+impl Weave {
     fn compute_weighted_avg_for(&self, i: usize) -> f32 {
         let mut weight: Vec<f32> = vec![1.0; self.lens.0];
         for dim in &self.dimensions {
@@ -40,7 +40,7 @@ mod tests {
         *,
     };
 
-    fn setup() -> WeAve {
+    fn setup() -> Weave {
         // dimension 0
         let d0 = Euclidean;
         let k0 = Exponential::new(1.0);
@@ -61,7 +61,7 @@ mod tests {
 
         let values = vec![1_f32, 1_f32];
 
-        WeAve {
+        Weave {
             dimensions: vec![Box::new(dim0), Box::new(dim1)],
             values,
             lens: (2, 1),
