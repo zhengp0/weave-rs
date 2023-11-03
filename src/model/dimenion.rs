@@ -1,9 +1,9 @@
 use crate::model::{distance::Distance, kernel::Kernel};
 use std::{collections::HashMap, hash::Hash};
 
-struct Coords<T> {
-    data: Vec<Vec<T>>,
-    pred: Vec<Vec<T>>,
+pub struct Coords<T> {
+    pub data: Vec<Vec<T>>,
+    pub pred: Vec<Vec<T>>,
 }
 
 pub struct DimensionInfo<D, K>
@@ -11,17 +11,31 @@ where
     D: Distance,
     K: Kernel<Input = D::Output>,
 {
-    distance: D,
-    kernel: K,
-    coords: Coords<D::Input>,
+    pub distance: D,
+    pub kernel: K,
+    pub coords: Coords<D::Input>,
 }
 
-pub struct Generic<D, K>(DimensionInfo<D, K>)
+impl<D, K> DimensionInfo<D, K>
+where
+    D: Distance,
+    K: Kernel<Input = D::Output>,
+{
+    pub fn new(distance: D, kernel: K, coords: Coords<D::Input>) -> Self {
+        Self {
+            distance,
+            kernel,
+            coords,
+        }
+    }
+}
+
+pub struct Generic<D, K>(pub DimensionInfo<D, K>)
 where
     D: Distance,
     K: Kernel<Input = D::Output>;
 
-pub struct Categorical<D, K>(DimensionInfo<D, K>)
+pub struct Categorical<D, K>(pub DimensionInfo<D, K>)
 where
     D: Distance,
     K: Kernel<Input = D::Output>,
