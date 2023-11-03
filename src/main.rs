@@ -14,7 +14,7 @@ fn main() {
 
     let coord = read_parquet_cols::<_, i32>(
         &config.datasets.data,
-        &config.dimensions[2].info_config().key,
+        &config.dimensions[2].into_inner().key,
     )
     .unwrap();
     println!("{:?}", coord);
