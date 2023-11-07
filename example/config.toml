@@ -2,6 +2,9 @@
 data = "example/data/data.parquet"
 pred = "example/data/pred.parquet"
 
+[datakeys]
+values = "residual_nos_1"
+
 [[dimensions]]
 type = "Generic"
 key = ["age_mid"]

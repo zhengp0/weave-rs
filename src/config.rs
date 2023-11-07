@@ -5,6 +5,7 @@ use toml;
 #[derive(Deserialize)]
 pub struct Config {
     pub datasets: DatasetsConfig,
+    pub datakeys: DataKeysConfig,
     pub dimensions: Vec<DimensionConfig>,
 }
 
@@ -20,6 +21,11 @@ impl Config {
 pub struct DatasetsConfig {
     pub data: path::PathBuf,
     pub pred: path::PathBuf,
+}
+
+#[derive(Deserialize)]
+pub struct DataKeysConfig {
+    pub values: String,
 }
 
 #[derive(Deserialize)]
