@@ -1,31 +1,21 @@
-pub trait Distance {
-    type Input;
-    type Output;
-
-    fn call(&self, x: &Vec<Self::Input>, y: &Vec<Self::Input>) -> Self::Output;
+pub enum Distance {
+    Euclidean(EuclideanFn),
+    Tree(TreeFn),
 }
 
-pub struct Euclidean;
-
-impl Distance for Euclidean {
-    type Input = f32;
-    type Output = f32;
-
-    fn call(&self, x: &Vec<Self::Input>, y: &Vec<Self::Input>) -> Self::Output {
+pub struct EuclideanFn;
+impl EuclideanFn {
+    pub fn call(&self, x: &Vec<f32>, y: &Vec<f32>) -> f32 {
         (x[0] - y[0]).abs()
     }
 }
 
-pub struct Tree;
-
-impl Distance for Tree {
-    type Input = i32;
-    type Output = i32;
-
-    fn call(&self, x: &Vec<Self::Input>, y: &Vec<Self::Input>) -> Self::Output {
+pub struct TreeFn;
+impl TreeFn {
+    pub fn call(&self, x: &Vec<i32>, y: &Vec<i32>) -> i32 {
         let x_iter = x.iter().rev();
         let y_iter = y.iter().rev();
-        x_iter.zip(y_iter).take_while(|(xi, yi)| xi != yi).count() as Self::Output
+        x_iter.zip(y_iter).take_while(|(xi, yi)| xi != yi).count() as i32
     }
 }
 
@@ -35,7 +25,7 @@ mod tests {
 
     #[test]
     fn test_euclidean() {
-        let distance_fn = Euclidean;
+        let distance_fn = EuclideanFn;
         let x: Vec<f32> = vec![0.0];
         let y: Vec<f32> = vec![1.0];
 
@@ -46,7 +36,7 @@ mod tests {
 
     #[test]
     fn test_tree() {
-        let distance_fn = Tree;
+        let distance_fn = TreeFn;
 
         let x = vec![0, 1, 2];
         let y_vec = vec![vec![3, 4, 5], vec![0, 6, 7], vec![0, 1, 8], vec![0, 1, 2]];
