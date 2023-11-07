@@ -30,7 +30,7 @@ pub enum DimensionConfig {
 }
 
 impl DimensionConfig {
-    pub fn into_inner(&self) -> &DimensionInfoConfig {
+    pub fn as_inner(&self) -> &DimensionInfoConfig {
         match self {
             Self::Generic(info_config) => info_config,
             Self::Categorical(info_config) => info_config,
