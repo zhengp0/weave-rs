@@ -1,5 +1,5 @@
-use serde::{de, Deserialize};
-use std::fmt;
+use serde::Deserialize;
+use std::convert::From;
 
 #[derive(Deserialize)]
 #[serde(tag = "kind")]
@@ -36,6 +36,8 @@ impl TricubicFn {
     }
 }
 
+#[derive(Deserialize)]
+#[serde(from = "DepthCODEmFnNewArgs")]
 pub struct DepthCODEmFn {
     pub radius: f32,
     pub maxlvl: i32,
@@ -66,103 +68,16 @@ impl DepthCODEmFn {
     }
 }
 
-impl<'de> de::Deserialize<'de> for DepthCODEmFn {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: de::Deserializer<'de>,
-    {
-        enum Field {
-            Radius,
-            Maxlvl,
-        }
+#[derive(Deserialize)]
+struct DepthCODEmFnNewArgs {
+    radius: f32,
+    maxlvl: i32,
+}
 
-        // This part could also be generated independently by:
-        //
-        //    #[derive(de::Deserialize)]
-        //    #[serde(field_identifier, rename_all = "lowercase")]
-        //    enum Field { Radius, Maxlvl }
-        impl<'de> de::Deserialize<'de> for Field {
-            fn deserialize<D>(deserializer: D) -> Result<Field, D::Error>
-            where
-                D: de::Deserializer<'de>,
-            {
-                struct FieldVisitor;
-
-                impl<'de> de::Visitor<'de> for FieldVisitor {
-                    type Value = Field;
-
-                    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-                        formatter.write_str("`radius` or `maxlvl`")
-                    }
-
-                    fn visit_str<E>(self, value: &str) -> Result<Field, E>
-                    where
-                        E: de::Error,
-                    {
-                        match value {
-                            "radius" => Ok(Field::Radius),
-                            "maxlvl" => Ok(Field::Maxlvl),
-                            _ => Err(de::Error::unknown_field(value, FIELDS)),
-                        }
-                    }
-                }
-
-                deserializer.deserialize_identifier(FieldVisitor)
-            }
-        }
-
-        struct DepthCODEmFnVisitor;
-
-        impl<'de> de::Visitor<'de> for DepthCODEmFnVisitor {
-            type Value = DepthCODEmFn;
-
-            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-                formatter.write_str("struct DepthCODEmFn")
-            }
-
-            fn visit_seq<V>(self, mut seq: V) -> Result<DepthCODEmFn, V::Error>
-            where
-                V: de::SeqAccess<'de>,
-            {
-                let radius = seq
-                    .next_element()?
-                    .ok_or_else(|| de::Error::invalid_length(0, &self))?;
-                let maxlvl = seq
-                    .next_element()?
-                    .ok_or_else(|| de::Error::invalid_length(1, &self))?;
-                Ok(DepthCODEmFn::new(radius, maxlvl))
-            }
-
-            fn visit_map<V>(self, mut map: V) -> Result<DepthCODEmFn, V::Error>
-            where
-                V: de::MapAccess<'de>,
-            {
-                let mut radius = None;
-                let mut maxlvl = None;
-                while let Some(key) = map.next_key()? {
-                    match key {
-                        Field::Radius => {
-                            if radius.is_some() {
-                                return Err(de::Error::duplicate_field("radius"));
-                            }
-                            radius = Some(map.next_value()?);
-                        }
-                        Field::Maxlvl => {
-                            if maxlvl.is_some() {
-                                return Err(de::Error::duplicate_field("maxlvl"));
-                            }
-                            maxlvl = Some(map.next_value()?);
-                        }
-                    }
-                }
-                let radius = radius.ok_or_else(|| de::Error::missing_field("radius"))?;
-                let maxlvl = maxlvl.ok_or_else(|| de::Error::missing_field("maxlvl"))?;
-                Ok(DepthCODEmFn::new(radius, maxlvl))
-            }
-        }
-
-        const FIELDS: &'static [&'static str] = &["radius", "maxlvl"];
-        deserializer.deserialize_struct("DepthCODEmFn", FIELDS, DepthCODEmFnVisitor)
+impl From<DepthCODEmFnNewArgs> for DepthCODEmFn {
+    fn from(value: DepthCODEmFnNewArgs) -> Self {
+        let DepthCODEmFnNewArgs { radius, maxlvl } = value;
+        Self::new(radius, maxlvl)
     }
 }
 
