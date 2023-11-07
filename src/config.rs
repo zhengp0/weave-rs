@@ -33,7 +33,6 @@ impl Config {
             .map(|dim_config| dim_config.into_dimension(&self.datasets))
             .collect();
         // TODO: create read single col function
-        // TODO: the generic for path is tedious, revert to string
         let values: Vec<f32> =
             read_parquet_cols::<f32>(&self.datasets.data, &vec![self.datakeys.values])
                 .unwrap()
