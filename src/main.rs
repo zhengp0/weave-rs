@@ -8,12 +8,10 @@ fn main() {
 
     println!(
         "datasets: data: {}, pred: {}",
-        config.datasets.data.display(),
-        config.datasets.pred.display(),
+        config.datasets.data, config.datasets.pred,
     );
 
-    let coord =
-        read_parquet_cols::<_, i32>(&config.datasets.data, &config.dimensions[2].key).unwrap();
+    let coord = read_parquet_cols::<i32>(&config.datasets.data, &config.dimensions[2].key).unwrap();
     println!("{:?}", coord);
 
     let nrow = read_parquet_nrow(&config.datasets.data).unwrap();

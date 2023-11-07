@@ -1,5 +1,5 @@
 use serde::Deserialize;
-use std::{error, fs, path};
+use std::{error, fs};
 use toml;
 
 use crate::{
@@ -20,7 +20,7 @@ pub struct Config {
 }
 
 impl Config {
-    pub fn from_file<P: AsRef<path::Path>>(path: P) -> Result<Config, Box<dyn error::Error>> {
+    pub fn from_file(path: &String) -> Result<Config, Box<dyn error::Error>> {
         let file = fs::read_to_string(path)?;
         let config = toml::from_str(&file)?;
         Ok(config)
@@ -35,7 +35,7 @@ impl Config {
         // TODO: create read single col function
         // TODO: the generic for path is tedious, revert to string
         let values: Vec<f32> =
-            read_parquet_cols::<_, f32>(&self.datasets.data, &vec![self.datakeys.values])
+            read_parquet_cols::<f32>(&self.datasets.data, &vec![self.datakeys.values])
                 .unwrap()
                 .into_iter()
                 .map(|v| v[0])
@@ -50,8 +50,8 @@ impl Config {
 
 #[derive(Deserialize)]
 pub struct DatasetsConfig {
-    pub data: path::PathBuf,
-    pub pred: path::PathBuf,
+    pub data: String,
+    pub pred: String,
 }
 
 #[derive(Deserialize)]
@@ -71,12 +71,12 @@ impl DimensionConfig {
     pub fn into_dimension(self, datasets: &DatasetsConfig) -> Dimension {
         let coords = match self.distance {
             Distance::Euclidean(_) => Coords::F32(CoordsData {
-                data: read_parquet_cols::<_, f32>(&datasets.data, &self.key).unwrap(),
-                pred: read_parquet_cols::<_, f32>(&datasets.pred, &self.key).unwrap(),
+                data: read_parquet_cols::<f32>(&datasets.data, &self.key).unwrap(),
+                pred: read_parquet_cols::<f32>(&datasets.pred, &self.key).unwrap(),
             }),
             Distance::Tree(_) => Coords::I32(CoordsData {
-                data: read_parquet_cols::<_, i32>(&datasets.data, &self.key).unwrap(),
-                pred: read_parquet_cols::<_, i32>(&datasets.pred, &self.key).unwrap(),
+                data: read_parquet_cols::<i32>(&datasets.data, &self.key).unwrap(),
+                pred: read_parquet_cols::<i32>(&datasets.pred, &self.key).unwrap(),
             }),
         };
         Dimension::new(self.distance, self.kernel, coords, self.kind)

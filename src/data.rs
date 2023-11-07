@@ -1,7 +1,7 @@
 use number::Number;
 use parquet::file::reader::{FileReader, SerializedFileReader};
 use parquet::{record::Field, schema::types::Type};
-use std::{collections::HashMap, error::Error, fmt::Display, fs::File, path::Path, sync::Arc};
+use std::{collections::HashMap, error::Error, fmt::Display, fs::File, sync::Arc};
 
 pub mod number;
 
@@ -23,22 +23,18 @@ impl Display for DataError {
 
 impl Error for DataError {}
 
-pub fn read_parquet_cols<P, D>(path: P, cols: &Vec<String>) -> GenResult<Vec<Vec<D>>>
-where
-    P: AsRef<Path>,
-    D: Number,
-{
+pub fn read_parquet_cols<T: Number>(path: &String, cols: &Vec<String>) -> GenResult<Vec<Vec<T>>> {
     let file = File::open(path)?;
     let reader = SerializedFileReader::new(file)?;
     let schema = reader.metadata().file_metadata().schema();
     let projection = build_projection(cols, schema)?;
     let rows = reader.get_row_iter(Some(projection))?;
 
-    let mut values = Vec::<Vec<D>>::new();
+    let mut values = Vec::<Vec<T>>::new();
     for row in rows {
-        let item: Vec<D> = row?
+        let item: Vec<T> = row?
             .get_column_iter()
-            .map(|(_, field)| cast_field_to_number::<D>(field))
+            .map(|(_, field)| cast_field_to_number::<T>(field))
             .collect();
         values.push(item);
     }
@@ -77,10 +73,7 @@ fn cast_field_to_number<D: Number>(field: &Field) -> D {
     }
 }
 
-pub fn read_parquet_nrow<P>(path: P) -> GenResult<usize>
-where
-    P: AsRef<Path>,
-{
+pub fn read_parquet_nrow(path: &String) -> GenResult<usize> {
     let file = File::open(path)?;
     let reader = SerializedFileReader::new(file)?;
     Ok(reader.metadata().file_metadata().num_rows() as usize)
