@@ -5,17 +5,13 @@ pub mod kernel;
 use crate::model::dimenion::Dimension;
 
 pub struct Weave {
-    pub dimensions: Vec<Box<dyn Dimension>>,
+    pub dimensions: Vec<Dimension>,
     values: Vec<f32>,
     lens: (usize, usize),
 }
 
 impl Weave {
-    pub fn new(
-        dimensions: Vec<Box<dyn Dimension>>,
-        values: Vec<f32>,
-        lens: (usize, usize),
-    ) -> Self {
+    pub fn new(dimensions: Vec<Dimension>, values: Vec<f32>, lens: (usize, usize)) -> Self {
         Self {
             dimensions,
             values,
@@ -46,35 +42,37 @@ impl Weave {
 #[cfg(test)]
 mod tests {
     use super::{
-        dimenion::{Coords, DimensionInfo, Generic},
-        distance::Euclidean,
-        kernel::{Exponential, Tricubic},
+        dimenion::{Coords, CoordsData, Dimension, DimensionKind},
+        distance::{Distance, EuclideanFn},
+        kernel::{ExponentialFn, Kernel, TricubicFn},
         *,
     };
 
     fn setup() -> Weave {
         // dimension 0
-        let d0 = Euclidean;
-        let k0 = Exponential::new(1.0);
-        let c0 = Coords {
+        let d0 = Distance::Euclidean(EuclideanFn);
+        let k0 = Kernel::Exponential(ExponentialFn::new(1.0));
+        let c0 = Coords::F32(CoordsData {
             data: vec![vec![0_f32], vec![1_f32]],
             pred: vec![vec![0_f32]],
-        };
-        let dim0 = Generic(DimensionInfo::new(d0, k0, c0));
+        });
+        let t0 = DimensionKind::Generic;
+        let dim0 = Dimension::new(d0, k0, c0, t0);
 
         // dimension 1
-        let d1 = Euclidean;
-        let k1 = Tricubic::new(1.0, 0.5);
-        let c1 = Coords {
+        let d1 = Distance::Euclidean(EuclideanFn);
+        let k1 = Kernel::Tricubic(TricubicFn::new(1.0, 0.5));
+        let c1 = Coords::F32(CoordsData {
             data: vec![vec![0_f32], vec![1_f32]],
             pred: vec![vec![0_f32]],
-        };
-        let dim1 = Generic(DimensionInfo::new(d1, k1, c1));
+        });
+        let t1 = DimensionKind::Generic;
+        let dim1 = Dimension::new(d1, k1, c1, t1);
 
         let values = vec![1_f32, 1_f32];
 
         Weave {
-            dimensions: vec![Box::new(dim0), Box::new(dim1)],
+            dimensions: vec![dim0, dim1],
             values,
             lens: (2, 1),
         }
