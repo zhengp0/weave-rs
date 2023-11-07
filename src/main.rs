@@ -1,5 +1,5 @@
 use weavers::config::Config;
-use weavers::data::read_parquet_cols;
+use weavers::data::{read_parquet_cols, read_parquet_nrow};
 
 fn main() {
     // TODO: hanle command line argument more elegantly
@@ -16,4 +16,7 @@ fn main() {
         read_parquet_cols::<_, i32>(&config.datasets.data, &config.dimensions[2].as_inner().key)
             .unwrap();
     println!("{:?}", coord);
+
+    let nrow = read_parquet_nrow(&config.datasets.data).unwrap();
+    println!("number of rows is {}", nrow);
 }

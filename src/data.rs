@@ -76,3 +76,12 @@ fn cast_field_to_number<D: Number>(field: &Field) -> D {
         _ => panic!("Cannot cast {:?} to preset types", field),
     }
 }
+
+pub fn read_parquet_nrow<P>(path: P) -> GenResult<i32>
+where
+    P: AsRef<Path>,
+{
+    let file = File::open(path)?;
+    let reader = SerializedFileReader::new(file)?;
+    Ok(reader.metadata().file_metadata().num_rows() as i32)
+}
