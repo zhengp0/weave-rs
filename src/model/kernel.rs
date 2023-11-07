@@ -1,9 +1,15 @@
+use serde::Deserialize;
+use std::convert::From;
+
+#[derive(Deserialize)]
+#[serde(tag = "kind")]
 pub enum Kernel {
     Exponential(ExponentialFn),
     Tricubic(TricubicFn),
     DepthCODEm(DepthCODEmFn),
 }
 
+#[derive(Deserialize)]
 pub struct ExponentialFn {
     pub radius: f32,
 }
@@ -16,6 +22,7 @@ impl ExponentialFn {
     }
 }
 
+#[derive(Deserialize)]
 pub struct TricubicFn {
     pub radius: f32,
     pub exponent: f32,
@@ -29,6 +36,8 @@ impl TricubicFn {
     }
 }
 
+#[derive(Deserialize)]
+#[serde(from = "DepthCODEmFnNewArgs")]
 pub struct DepthCODEmFn {
     pub radius: f32,
     pub maxlvl: i32,
@@ -56,6 +65,19 @@ impl DepthCODEmFn {
         } else {
             self.one_minus_radius.powi(d) * self.radius
         }
+    }
+}
+
+#[derive(Deserialize)]
+struct DepthCODEmFnNewArgs {
+    radius: f32,
+    maxlvl: i32,
+}
+
+impl From<DepthCODEmFnNewArgs> for DepthCODEmFn {
+    fn from(value: DepthCODEmFnNewArgs) -> Self {
+        let DepthCODEmFnNewArgs { radius, maxlvl } = value;
+        Self::new(radius, maxlvl)
     }
 }
 

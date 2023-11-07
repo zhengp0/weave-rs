@@ -2,6 +2,16 @@ use serde::Deserialize;
 use std::{error, fs, path};
 use toml;
 
+use crate::{
+    data::{read_parquet_cols, read_parquet_nrow},
+    model::{
+        dimenion::{Coords, CoordsData, Dimension, DimensionKind},
+        distance::Distance,
+        kernel::Kernel,
+        Weave,
+    },
+};
+
 #[derive(Deserialize)]
 pub struct Config {
     pub datasets: DatasetsConfig,
@@ -14,6 +24,27 @@ impl Config {
         let file = fs::read_to_string(path)?;
         let config = toml::from_str(&file)?;
         Ok(config)
+    }
+
+    pub fn into_weave(self) -> Weave {
+        let dimensions: Vec<Dimension> = self
+            .dimensions
+            .into_iter()
+            .map(|dim_config| dim_config.into_dimension(&self.datasets))
+            .collect();
+        // TODO: create read single col function
+        // TODO: the generic for path is tedious, revert to string
+        let values: Vec<f32> =
+            read_parquet_cols::<_, f32>(&self.datasets.data, &vec![self.datakeys.values])
+                .unwrap()
+                .into_iter()
+                .map(|v| v[0])
+                .collect();
+        let lens = (
+            read_parquet_nrow(&self.datasets.data).unwrap(),
+            read_parquet_nrow(&self.datasets.pred).unwrap(),
+        );
+        Weave::new(dimensions, values, lens)
     }
 }
 
@@ -29,39 +60,25 @@ pub struct DataKeysConfig {
 }
 
 #[derive(Deserialize)]
-#[serde(tag = "type")]
-pub enum DimensionConfig {
-    Generic(DimensionInfoConfig),
-    Categorical(DimensionInfoConfig),
+pub struct DimensionConfig {
+    pub kind: DimensionKind,
+    pub key: Vec<String>,
+    pub distance: Distance,
+    pub kernel: Kernel,
 }
 
 impl DimensionConfig {
-    pub fn as_inner(&self) -> &DimensionInfoConfig {
-        match self {
-            Self::Generic(info_config) => info_config,
-            Self::Categorical(info_config) => info_config,
-        }
+    pub fn into_dimension(self, datasets: &DatasetsConfig) -> Dimension {
+        let coords = match self.distance {
+            Distance::Euclidean(_) => Coords::F32(CoordsData {
+                data: read_parquet_cols::<_, f32>(&datasets.data, &self.key).unwrap(),
+                pred: read_parquet_cols::<_, f32>(&datasets.pred, &self.key).unwrap(),
+            }),
+            Distance::Tree(_) => Coords::I32(CoordsData {
+                data: read_parquet_cols::<_, i32>(&datasets.data, &self.key).unwrap(),
+                pred: read_parquet_cols::<_, i32>(&datasets.pred, &self.key).unwrap(),
+            }),
+        };
+        Dimension::new(self.distance, self.kernel, coords, self.kind)
     }
-}
-
-#[derive(Deserialize)]
-pub struct DimensionInfoConfig {
-    pub key: Vec<String>,
-    pub distance: DistanceConfig,
-    pub kernel: KernelConfig,
-}
-
-#[derive(Deserialize)]
-#[serde(tag = "type")]
-pub enum DistanceConfig {
-    Euclidean,
-    Tree,
-}
-
-#[derive(Deserialize)]
-#[serde(tag = "type")]
-pub enum KernelConfig {
-    Exponential { radius: f32 },
-    Tricubic { radius: f32, exponent: f32 },
-    DepthCODEm { radius: f32, maxlvl: i32 },
 }

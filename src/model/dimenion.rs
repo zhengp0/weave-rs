@@ -1,4 +1,5 @@
 use crate::model::{distance::Distance, kernel::Kernel};
+use serde::Deserialize;
 use std::collections::HashMap;
 
 pub struct CoordsData<T> {
@@ -11,6 +12,7 @@ pub enum Coords {
     F32(CoordsData<f32>),
 }
 
+#[derive(Deserialize)]
 pub enum DimensionKind {
     Generic,
     Categorical,

@@ -1,8 +1,13 @@
+use serde::Deserialize;
+
+#[derive(Deserialize)]
+#[serde(tag = "kind")]
 pub enum Distance {
     Euclidean(EuclideanFn),
     Tree(TreeFn),
 }
 
+#[derive(Deserialize)]
 pub struct EuclideanFn;
 impl EuclideanFn {
     pub fn call(&self, x: &Vec<f32>, y: &Vec<f32>) -> f32 {
@@ -10,6 +15,7 @@ impl EuclideanFn {
     }
 }
 
+#[derive(Deserialize)]
 pub struct TreeFn;
 impl TreeFn {
     pub fn call(&self, x: &Vec<i32>, y: &Vec<i32>) -> i32 {
