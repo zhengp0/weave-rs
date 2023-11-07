@@ -11,7 +11,7 @@ pub enum Coords {
     F32(CoordsData<f32>),
 }
 
-pub enum Processor {
+pub enum DimensionKind {
     Generic,
     Categorical,
 }
@@ -20,16 +20,16 @@ pub struct Dimension {
     pub distance: Distance,
     pub kernel: Kernel,
     pub coords: Coords,
-    pub processor: Processor,
+    pub kind: DimensionKind,
 }
 
 impl Dimension {
-    pub fn new(distance: Distance, kernel: Kernel, coords: Coords, processor: Processor) -> Self {
+    pub fn new(distance: Distance, kernel: Kernel, coords: Coords, kind: DimensionKind) -> Self {
         Self {
             distance,
             kernel,
             coords,
-            processor,
+            kind,
         }
     }
 
@@ -39,7 +39,7 @@ impl Dimension {
                 distance: Distance::Euclidean(distance_fn),
                 kernel: Kernel::Exponential(kernel_fn),
                 coords: Coords::F32(coords),
-                processor: Processor::Generic,
+                kind: DimensionKind::Generic,
             } => {
                 let x = &coords.data[i];
                 let y_iter = coords.pred.iter();
@@ -51,7 +51,7 @@ impl Dimension {
                 distance: Distance::Euclidean(distance_fn),
                 kernel: Kernel::Tricubic(kernel_fn),
                 coords: Coords::F32(coords),
-                processor: Processor::Generic,
+                kind: DimensionKind::Generic,
             } => {
                 let x = &coords.data[i];
                 let y_iter = coords.pred.iter();
@@ -63,7 +63,7 @@ impl Dimension {
                 distance: Distance::Tree(distance_fn),
                 kernel: Kernel::DepthCODEm(kernel_fn),
                 coords: Coords::I32(coords),
-                processor: Processor::Generic,
+                kind: DimensionKind::Generic,
             } => {
                 let x = &coords.data[i];
                 let y_iter = coords.pred.iter();
@@ -75,7 +75,7 @@ impl Dimension {
                 distance: Distance::Tree(distance_fn),
                 kernel: Kernel::DepthCODEm(kernel_fn),
                 coords: Coords::I32(coords),
-                processor: Processor::Categorical,
+                kind: DimensionKind::Categorical,
             } => {
                 let x = &coords.data[i];
                 let y_iter = coords.pred.iter();
@@ -113,7 +113,7 @@ mod tests {
             Distance::Tree(TreeFn),
             Kernel::DepthCODEm(DepthCODEmFn::new(0.5, 3)),
             coords(),
-            Processor::Generic,
+            DimensionKind::Generic,
         );
         let mut my_weight: Vec<f32> = vec![1.0; 4];
         dimension.update_weight(0, &mut my_weight);
@@ -127,7 +127,7 @@ mod tests {
             Distance::Tree(TreeFn),
             Kernel::DepthCODEm(DepthCODEmFn::new(0.5, 3)),
             coords(),
-            Processor::Categorical,
+            DimensionKind::Categorical,
         );
         let mut my_weight: Vec<f32> = vec![1.0, 2.0, 3.0, 4.0];
         dimension.update_weight(0, &mut my_weight);

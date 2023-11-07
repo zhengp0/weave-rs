@@ -42,7 +42,7 @@ impl Weave {
 #[cfg(test)]
 mod tests {
     use super::{
-        dimenion::{Coords, CoordsData, Dimension, Processor},
+        dimenion::{Coords, CoordsData, Dimension, DimensionKind},
         distance::{Distance, EuclideanFn},
         kernel::{ExponentialFn, Kernel, TricubicFn},
         *,
@@ -56,8 +56,8 @@ mod tests {
             data: vec![vec![0_f32], vec![1_f32]],
             pred: vec![vec![0_f32]],
         });
-        let p0 = Processor::Generic;
-        let dim0 = Dimension::new(d0, k0, c0, p0);
+        let t0 = DimensionKind::Generic;
+        let dim0 = Dimension::new(d0, k0, c0, t0);
 
         // dimension 1
         let d1 = Distance::Euclidean(EuclideanFn);
@@ -66,8 +66,8 @@ mod tests {
             data: vec![vec![0_f32], vec![1_f32]],
             pred: vec![vec![0_f32]],
         });
-        let p1 = Processor::Generic;
-        let dim1 = Dimension::new(d1, k1, c1, p1);
+        let t1 = DimensionKind::Generic;
+        let dim1 = Dimension::new(d1, k1, c1, t1);
 
         let values = vec![1_f32, 1_f32];
 
