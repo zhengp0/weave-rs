@@ -11,6 +11,18 @@ pub struct Weave {
 }
 
 impl Weave {
+    pub fn new(
+        dimensions: Vec<Box<dyn Dimension>>,
+        values: Vec<f32>,
+        lens: (usize, usize),
+    ) -> Self {
+        Self {
+            dimensions,
+            values,
+            lens,
+        }
+    }
+
     fn compute_weighted_avg_for(&self, i: usize) -> f32 {
         let mut weight: Vec<f32> = vec![1.0; self.lens.0];
         for dim in &self.dimensions {
