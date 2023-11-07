@@ -2,6 +2,8 @@ use serde::Deserialize;
 use std::{error, fs, path};
 use toml;
 
+use crate::model::{dimenion::DimensionKind, distance::Distance, kernel::Kernel};
+
 #[derive(Deserialize)]
 pub struct Config {
     pub datasets: DatasetsConfig,
@@ -29,39 +31,9 @@ pub struct DataKeysConfig {
 }
 
 #[derive(Deserialize)]
-#[serde(tag = "type")]
-pub enum DimensionConfig {
-    Generic(DimensionInfoConfig),
-    Categorical(DimensionInfoConfig),
-}
-
-impl DimensionConfig {
-    pub fn as_inner(&self) -> &DimensionInfoConfig {
-        match self {
-            Self::Generic(info_config) => info_config,
-            Self::Categorical(info_config) => info_config,
-        }
-    }
-}
-
-#[derive(Deserialize)]
-pub struct DimensionInfoConfig {
+pub struct DimensionConfig {
+    pub kind: DimensionKind,
     pub key: Vec<String>,
-    pub distance: DistanceConfig,
-    pub kernel: KernelConfig,
-}
-
-#[derive(Deserialize)]
-#[serde(tag = "type")]
-pub enum DistanceConfig {
-    Euclidean,
-    Tree,
-}
-
-#[derive(Deserialize)]
-#[serde(tag = "type")]
-pub enum KernelConfig {
-    Exponential { radius: f32 },
-    Tricubic { radius: f32, exponent: f32 },
-    DepthCODEm { radius: f32, maxlvl: i32 },
+    pub distance: Distance,
+    pub kernel: Kernel,
 }
