@@ -18,4 +18,6 @@ fn main() {
 
     let nrow = read_parquet_nrow(&config.datasets.data).unwrap();
     println!("number of rows is {}", nrow);
+
+    let _weave = config.into_weave();
 }
