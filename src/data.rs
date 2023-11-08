@@ -1,27 +1,11 @@
 use number::Number;
 use parquet::file::reader::{FileReader, SerializedFileReader};
 use parquet::{record::Field, schema::types::Type};
-use std::{collections::HashMap, error::Error, fmt::Display, fs::File, result, sync::Arc};
+use std::{collections::HashMap, error::Error, fs::File, result, sync::Arc};
 
 pub mod number;
 
 type Result<T> = result::Result<T, Box<dyn Error>>;
-
-#[derive(Debug)]
-enum DataError {
-    ColumnMissingError(String),
-}
-
-impl Display for DataError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let message = match self {
-            Self::ColumnMissingError(col) => format!("missing column {}", col),
-        };
-        write!(f, "{}", message)
-    }
-}
-
-impl Error for DataError {}
 
 pub fn read_parquet_cols<T: Number>(path: &String, colnames: &Vec<String>) -> Result<Vec<Vec<T>>> {
     let file = File::open(path)?;
@@ -50,12 +34,10 @@ fn build_projection(colnames: &Vec<String>, schema: &Type) -> Result<Type> {
 
     let mut fields = Vec::<Arc<Type>>::new();
     for colname in colnames {
-        let colname = colname.as_str();
-        if !field_map.contains_key(colname) {
-            return Err(Box::new(DataError::ColumnMissingError(colname.to_string())));
-        }
-        let field = (*field_map[colname]).clone();
-        fields.push(field);
+        let field = field_map
+            .get(colname.as_str())
+            .ok_or(format!("missing column {}", colname))?;
+        fields.push((*field).clone());
     }
     Ok(Type::GroupType { basic_info, fields })
 }
