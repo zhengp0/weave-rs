@@ -1,9 +1,13 @@
-[datasets]
-data = "example/data/data.parquet"
-pred = "example/data/pred.parquet"
-
-[datakeys]
+[input.data]
+path = "example/data/data.parquet"
 values = "residual_nos_1"
+
+[input.pred]
+path = "example/data/pred.parquet"
+
+[output]
+path = "example/data/result.parquet"
+values = "prediction"
 
 [[dimensions]]
 kind = "Generic"

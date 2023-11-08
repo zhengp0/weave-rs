@@ -14,8 +14,8 @@ use crate::{
 
 #[derive(Deserialize)]
 pub struct Config {
-    pub datasets: DatasetsConfig,
-    pub datakeys: DataKeysConfig,
+    pub input: Input,
+    pub output: Output,
     pub dimensions: Vec<DimensionConfig>,
 }
 
@@ -30,25 +30,38 @@ impl Config {
         let dimensions: Vec<Dimension> = self
             .dimensions
             .into_iter()
-            .map(|dim_config| dim_config.into_dimension(&self.datasets))
+            .map(|dim_config| dim_config.into_dimension(&self.input))
             .collect();
-        let values = read_parquet_col::<f32>(&self.datasets.data, &self.datakeys.values).unwrap();
+        let values =
+            read_parquet_col::<f32>(&self.input.data.path, &self.input.data.values).unwrap();
         let lens = (
-            read_parquet_nrow(&self.datasets.data).unwrap(),
-            read_parquet_nrow(&self.datasets.pred).unwrap(),
+            read_parquet_nrow(&self.input.data.path).unwrap(),
+            read_parquet_nrow(&self.input.pred.path).unwrap(),
         );
         Weave::new(dimensions, values, lens)
     }
 }
 
 #[derive(Deserialize)]
-pub struct DatasetsConfig {
-    pub data: String,
-    pub pred: String,
+pub struct Input {
+    pub data: InputData,
+    pub pred: InputPred,
 }
 
 #[derive(Deserialize)]
-pub struct DataKeysConfig {
+pub struct InputData {
+    pub path: String,
+    pub values: String,
+}
+
+#[derive(Deserialize)]
+pub struct InputPred {
+    pub path: String,
+}
+
+#[derive(Deserialize)]
+pub struct Output {
+    pub path: String,
     pub values: String,
 }
 
@@ -61,15 +74,15 @@ pub struct DimensionConfig {
 }
 
 impl DimensionConfig {
-    pub fn into_dimension(self, datasets: &DatasetsConfig) -> Dimension {
+    pub fn into_dimension(self, input: &Input) -> Dimension {
         let coords = match self.distance {
             Distance::Euclidean(_) => Coords::F32(CoordsData {
-                data: read_parquet_cols::<f32>(&datasets.data, &self.coords).unwrap(),
-                pred: read_parquet_cols::<f32>(&datasets.pred, &self.coords).unwrap(),
+                data: read_parquet_cols::<f32>(&input.data.path, &self.coords).unwrap(),
+                pred: read_parquet_cols::<f32>(&input.pred.path, &self.coords).unwrap(),
             }),
             Distance::Tree(_) => Coords::I32(CoordsData {
-                data: read_parquet_cols::<i32>(&datasets.data, &self.coords).unwrap(),
-                pred: read_parquet_cols::<i32>(&datasets.pred, &self.coords).unwrap(),
+                data: read_parquet_cols::<i32>(&input.data.path, &self.coords).unwrap(),
+                pred: read_parquet_cols::<i32>(&input.pred.path, &self.coords).unwrap(),
             }),
         };
         Dimension::new(self.distance, self.kernel, coords, self.kind)

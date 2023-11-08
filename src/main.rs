@@ -8,14 +8,14 @@ fn main() {
 
     println!(
         "datasets: data: {}, pred: {}",
-        config.datasets.data, config.datasets.pred,
+        config.input.data.path, config.input.pred.path,
     );
 
     let coord =
-        read_parquet_cols::<i32>(&config.datasets.data, &config.dimensions[2].coords).unwrap();
+        read_parquet_cols::<i32>(&config.input.data.path, &config.dimensions[2].coords).unwrap();
     println!("{:?}", coord);
 
-    let nrow = read_parquet_nrow(&config.datasets.data).unwrap();
+    let nrow = read_parquet_nrow(&config.input.data.path).unwrap();
     println!("number of rows is {}", nrow);
 
     let _weave = config.into_weave();
