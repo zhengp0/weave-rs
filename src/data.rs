@@ -28,17 +28,15 @@ pub fn read_parquet_cols<T: Number>(path: &String, cols: &Vec<String>) -> GenRes
     let reader = SerializedFileReader::new(file)?;
     let schema = reader.metadata().file_metadata().schema();
     let projection = build_projection(cols, schema)?;
-    let rows = reader.get_row_iter(Some(projection))?;
-
-    let mut values = Vec::<Vec<T>>::new();
-    for row in rows {
-        let item: Vec<T> = row?
-            .get_column_iter()
-            .map(|(_, field)| cast_field_to_number::<T>(field))
-            .collect();
-        values.push(item);
-    }
-
+    let values = reader
+        .get_row_iter(Some(projection))?
+        .map(|row| {
+            row.unwrap()
+                .get_column_iter()
+                .map(|(_, field)| cast_field_to_number::<T>(field))
+                .collect()
+        })
+        .collect();
     Ok(values)
 }
 
@@ -77,4 +75,22 @@ pub fn read_parquet_nrow(path: &String) -> GenResult<usize> {
     let file = File::open(path)?;
     let reader = SerializedFileReader::new(file)?;
     Ok(reader.metadata().file_metadata().num_rows() as usize)
+}
+
+pub fn read_parquet_col<T: Number>(path: &String, key: &String) -> GenResult<Vec<T>> {
+    let file = File::open(path)?;
+    let reader = SerializedFileReader::new(file)?;
+    let schema = reader.metadata().file_metadata().schema();
+    let projection = build_projection(&vec![key.to_string()], schema)?;
+    let values = reader
+        .get_row_iter(Some(projection))?
+        .map(|row| {
+            row.unwrap()
+                .get_column_iter()
+                .map(|(_, field)| cast_field_to_number::<T>(field))
+                .next()
+                .unwrap()
+        })
+        .collect();
+    Ok(values)
 }

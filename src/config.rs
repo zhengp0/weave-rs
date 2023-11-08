@@ -3,7 +3,7 @@ use std::{error, fs};
 use toml;
 
 use crate::{
-    data::{read_parquet_cols, read_parquet_nrow},
+    data::{read_parquet_col, read_parquet_cols, read_parquet_nrow},
     model::{
         dimenion::{Coords, CoordsData, Dimension, DimensionKind},
         distance::Distance,
@@ -32,13 +32,7 @@ impl Config {
             .into_iter()
             .map(|dim_config| dim_config.into_dimension(&self.datasets))
             .collect();
-        // TODO: create read single col function
-        let values: Vec<f32> =
-            read_parquet_cols::<f32>(&self.datasets.data, &vec![self.datakeys.values])
-                .unwrap()
-                .into_iter()
-                .map(|v| v[0])
-                .collect();
+        let values = read_parquet_col::<f32>(&self.datasets.data, &self.datakeys.values).unwrap();
         let lens = (
             read_parquet_nrow(&self.datasets.data).unwrap(),
             read_parquet_nrow(&self.datasets.pred).unwrap(),
