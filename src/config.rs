@@ -55,7 +55,7 @@ pub struct DataKeysConfig {
 #[derive(Deserialize)]
 pub struct DimensionConfig {
     pub kind: DimensionKind,
-    pub colnames: Vec<String>,
+    pub coords: Vec<String>,
     pub distance: Distance,
     pub kernel: Kernel,
 }
@@ -64,12 +64,12 @@ impl DimensionConfig {
     pub fn into_dimension(self, datasets: &DatasetsConfig) -> Dimension {
         let coords = match self.distance {
             Distance::Euclidean(_) => Coords::F32(CoordsData {
-                data: read_parquet_cols::<f32>(&datasets.data, &self.colnames).unwrap(),
-                pred: read_parquet_cols::<f32>(&datasets.pred, &self.colnames).unwrap(),
+                data: read_parquet_cols::<f32>(&datasets.data, &self.coords).unwrap(),
+                pred: read_parquet_cols::<f32>(&datasets.pred, &self.coords).unwrap(),
             }),
             Distance::Tree(_) => Coords::I32(CoordsData {
-                data: read_parquet_cols::<i32>(&datasets.data, &self.colnames).unwrap(),
-                pred: read_parquet_cols::<i32>(&datasets.pred, &self.colnames).unwrap(),
+                data: read_parquet_cols::<i32>(&datasets.data, &self.coords).unwrap(),
+                pred: read_parquet_cols::<i32>(&datasets.pred, &self.coords).unwrap(),
             }),
         };
         Dimension::new(self.distance, self.kernel, coords, self.kind)

@@ -12,7 +12,7 @@ fn main() {
     );
 
     let coord =
-        read_parquet_cols::<i32>(&config.datasets.data, &config.dimensions[2].colnames).unwrap();
+        read_parquet_cols::<i32>(&config.datasets.data, &config.dimensions[2].coords).unwrap();
     println!("{:?}", coord);
 
     let nrow = read_parquet_nrow(&config.datasets.data).unwrap();
