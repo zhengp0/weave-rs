@@ -1,11 +1,11 @@
 use number::Number;
 use parquet::file::reader::{FileReader, SerializedFileReader};
 use parquet::{record::Field, schema::types::Type};
-use std::{collections::HashMap, error::Error, fmt::Display, fs::File, sync::Arc};
+use std::{collections::HashMap, error::Error, fmt::Display, fs::File, result, sync::Arc};
 
 pub mod number;
 
-type GenResult<T> = Result<T, Box<dyn Error>>;
+type Result<T> = result::Result<T, Box<dyn Error>>;
 
 #[derive(Debug)]
 enum DataError {
@@ -23,7 +23,7 @@ impl Display for DataError {
 
 impl Error for DataError {}
 
-pub fn read_parquet_cols<T: Number>(path: &String, cols: &Vec<String>) -> GenResult<Vec<Vec<T>>> {
+pub fn read_parquet_cols<T: Number>(path: &String, cols: &Vec<String>) -> Result<Vec<Vec<T>>> {
     let file = File::open(path)?;
     let reader = SerializedFileReader::new(file)?;
     let schema = reader.metadata().file_metadata().schema();
@@ -40,7 +40,7 @@ pub fn read_parquet_cols<T: Number>(path: &String, cols: &Vec<String>) -> GenRes
     Ok(values)
 }
 
-fn build_projection(cols: &Vec<String>, schema: &Type) -> GenResult<Type> {
+fn build_projection(cols: &Vec<String>, schema: &Type) -> Result<Type> {
     let basic_info = schema.get_basic_info().clone();
     let field_map: HashMap<&str, &Arc<Type>> = schema
         .get_fields()
@@ -71,13 +71,13 @@ fn cast_field_to_number<D: Number>(field: &Field) -> D {
     }
 }
 
-pub fn read_parquet_nrow(path: &String) -> GenResult<usize> {
+pub fn read_parquet_nrow(path: &String) -> Result<usize> {
     let file = File::open(path)?;
     let reader = SerializedFileReader::new(file)?;
     Ok(reader.metadata().file_metadata().num_rows() as usize)
 }
 
-pub fn read_parquet_col<T: Number>(path: &String, key: &String) -> GenResult<Vec<T>> {
+pub fn read_parquet_col<T: Number>(path: &String, key: &String) -> Result<Vec<T>> {
     let file = File::open(path)?;
     let reader = SerializedFileReader::new(file)?;
     let schema = reader.metadata().file_metadata().schema();
