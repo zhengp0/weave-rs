@@ -23,11 +23,11 @@ impl Display for DataError {
 
 impl Error for DataError {}
 
-pub fn read_parquet_cols<T: Number>(path: &String, cols: &Vec<String>) -> Result<Vec<Vec<T>>> {
+pub fn read_parquet_cols<T: Number>(path: &String, colnames: &Vec<String>) -> Result<Vec<Vec<T>>> {
     let file = File::open(path)?;
     let reader = SerializedFileReader::new(file)?;
     let schema = reader.metadata().file_metadata().schema();
-    let projection = build_projection(cols, schema)?;
+    let projection = build_projection(colnames, schema)?;
     let values = reader
         .get_row_iter(Some(projection))?
         .map(|row| {
@@ -40,7 +40,7 @@ pub fn read_parquet_cols<T: Number>(path: &String, cols: &Vec<String>) -> Result
     Ok(values)
 }
 
-fn build_projection(cols: &Vec<String>, schema: &Type) -> Result<Type> {
+fn build_projection(colnames: &Vec<String>, schema: &Type) -> Result<Type> {
     let basic_info = schema.get_basic_info().clone();
     let field_map: HashMap<&str, &Arc<Type>> = schema
         .get_fields()
@@ -49,12 +49,12 @@ fn build_projection(cols: &Vec<String>, schema: &Type) -> Result<Type> {
         .collect();
 
     let mut fields = Vec::<Arc<Type>>::new();
-    for col in cols {
-        let col = col.as_str();
-        if !field_map.contains_key(col) {
-            return Err(Box::new(DataError::ColumnMissingError(col.to_string())));
+    for colname in colnames {
+        let colname = colname.as_str();
+        if !field_map.contains_key(colname) {
+            return Err(Box::new(DataError::ColumnMissingError(colname.to_string())));
         }
-        let field = (*field_map[col]).clone();
+        let field = (*field_map[colname]).clone();
         fields.push(field);
     }
     Ok(Type::GroupType { basic_info, fields })
@@ -77,11 +77,11 @@ pub fn read_parquet_nrow(path: &String) -> Result<usize> {
     Ok(reader.metadata().file_metadata().num_rows() as usize)
 }
 
-pub fn read_parquet_col<T: Number>(path: &String, key: &String) -> Result<Vec<T>> {
+pub fn read_parquet_col<T: Number>(path: &String, colname: &String) -> Result<Vec<T>> {
     let file = File::open(path)?;
     let reader = SerializedFileReader::new(file)?;
     let schema = reader.metadata().file_metadata().schema();
-    let projection = build_projection(&vec![key.to_string()], schema)?;
+    let projection = build_projection(&vec![colname.to_string()], schema)?;
     let values = reader
         .get_row_iter(Some(projection))?
         .map(|row| {

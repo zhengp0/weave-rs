@@ -7,18 +7,18 @@ values = "residual_nos_1"
 
 [[dimensions]]
 kind = "Generic"
-key = ["age_mid"]
+colnames = ["age_mid"]
 distance = { kind = "Euclidean" }
 kernel = { kind = "Exponential", radius = 0.7 }
 
 [[dimensions]]
 kind = "Generic"
-key = ["year_id"]
+colnames = ["year_id"]
 distance = { kind = "Euclidean" }
 kernel = { kind = "Tricubic", radius = 43.0, exponent = 0.5 }
 
 [[dimensions]]
 kind = "Categorical"
-key = ["super_region_id", "region_id", "location_id"]
+colnames = ["super_region_id", "region_id", "location_id"]
 distance = { kind = "Tree" }
 kernel = { kind = "DepthCODEm", radius = 0.7, maxlvl = 3 }
