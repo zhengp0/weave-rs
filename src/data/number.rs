@@ -1,4 +1,6 @@
 use core::convert::From;
+use parquet::basic::Type;
+use parquet::data_type::{BoolType, DataType, DoubleType, FloatType, Int32Type, Int64Type};
 use std::fmt::Display;
 
 pub trait Cast<T>: Sized {
@@ -160,12 +162,57 @@ impl Cast<f64> for f64 {
     }
 }
 
+// parquet interface
+pub trait ParquetDataType {
+    type D: DataType<T = Self>;
+
+    fn physical_type() -> Type {
+        Self::D::get_physical_type()
+    }
+}
+
+impl ParquetDataType for bool {
+    type D = BoolType;
+}
+
+impl ParquetDataType for i32 {
+    type D = Int32Type;
+}
+
+impl ParquetDataType for i64 {
+    type D = Int64Type;
+}
+
+impl ParquetDataType for f32 {
+    type D = FloatType;
+}
+
+impl ParquetDataType for f64 {
+    type D = DoubleType;
+}
+
 pub trait Number:
-    Cast<bool> + Cast<i32> + Cast<i64> + Cast<f32> + Cast<f64> + Clone + Copy + Display
+    Cast<bool>
+    + Cast<i32>
+    + Cast<i64>
+    + Cast<f32>
+    + Cast<f64>
+    + Clone
+    + Copy
+    + Display
+    + ParquetDataType
 {
 }
 
 impl<T> Number for T where
-    T: Cast<bool> + Cast<i32> + Cast<i64> + Cast<f32> + Cast<f64> + Clone + Copy + Display
+    T: Cast<bool>
+        + Cast<i32>
+        + Cast<i64>
+        + Cast<f32>
+        + Cast<f64>
+        + Clone
+        + Copy
+        + Display
+        + ParquetDataType
 {
 }
