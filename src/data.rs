@@ -7,7 +7,7 @@ use std::{collections::HashMap, error::Error, fs::File, result, sync::Arc};
 
 pub mod number;
 
-type Result<T> = result::Result<T, Box<dyn Error>>;
+pub type Result<T> = result::Result<T, Box<dyn Error>>;
 
 pub fn read_parquet_cols<T: Number>(path: &String, colnames: &Vec<String>) -> Result<Vec<Vec<T>>> {
     let file = File::open(path)?;
@@ -91,7 +91,6 @@ pub fn write_parquet_col<T: Number>(
         colname
     );
     let schema = Arc::new(parse_message_type(&message_type)?);
-    println!("{:?}", schema);
     let properties = Arc::new(WriterProperties::builder().build());
     let mut writer = SerializedFileWriter::new(file, schema, properties)?;
 

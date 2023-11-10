@@ -2,20 +2,29 @@ pub mod dimenion;
 pub mod distance;
 pub mod kernel;
 
+use crate::config::Output;
+use crate::data::{write_parquet_col, Result};
 use crate::model::dimenion::Dimension;
 
 pub struct Weave {
     pub dimensions: Vec<Dimension>,
     values: Vec<f32>,
     lens: (usize, usize),
+    output: Output,
 }
 
 impl Weave {
-    pub fn new(dimensions: Vec<Dimension>, values: Vec<f32>, lens: (usize, usize)) -> Self {
+    pub fn new(
+        dimensions: Vec<Dimension>,
+        values: Vec<f32>,
+        lens: (usize, usize),
+        output: Output,
+    ) -> Self {
         Self {
             dimensions,
             values,
             lens,
+            output,
         }
     }
 
@@ -36,6 +45,12 @@ impl Weave {
         (0..self.lens.1)
             .map(|i| self.compute_weighted_avg_for(i))
             .collect()
+    }
+
+    pub fn run(&self) -> Result<()> {
+        let weighted_avg = self.compute_weighted_avg();
+        write_parquet_col::<f32>(&self.output.path, &self.output.values, &weighted_avg)?;
+        Ok(())
     }
 }
 
@@ -70,11 +85,16 @@ mod tests {
         let dim1 = Dimension::new(d1, k1, c1, t1);
 
         let values = vec![1_f32, 1_f32];
+        let output = Output {
+            path: "example/result.parquet".to_string(),
+            values: "prediction".to_string(),
+        };
 
         Weave {
             dimensions: vec![dim0, dim1],
             values,
             lens: (2, 1),
+            output,
         }
     }
 

@@ -38,7 +38,7 @@ impl Config {
             read_parquet_nrow(&self.input.data.path).unwrap(),
             read_parquet_nrow(&self.input.pred.path).unwrap(),
         );
-        Weave::new(dimensions, values, lens)
+        Weave::new(dimensions, values, lens, self.output)
     }
 }
 
