@@ -88,7 +88,10 @@ impl Dimension {
                     norm_map.entry(d).and_modify(|x| *x += w).or_insert(*w);
                 }
                 for (d, w) in distance.iter().zip(weight.iter_mut()) {
-                    *w *= kernel_fn.call(d) / &norm_map[d];
+                    let s = norm_map[d];
+                    if s > 1e-16 {
+                        *w *= kernel_fn.call(d) / s;
+                    }
                 }
             }
             _ => panic!("cannot update weight"),
