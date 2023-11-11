@@ -77,8 +77,14 @@ pub struct DimensionConfig {
 #[serde(tag = "kind")]
 pub enum KernelConfig {
     Exponential { radius: f32 },
-    Tricubic { radius: f32, exponent: f32 },
+    Tricubic(TricubicConfig),
     DepthCODEm { radius: f32 },
+}
+
+#[derive(Deserialize)]
+pub struct TricubicConfig {
+    radius: Option<f32>,
+    exponent: f32,
 }
 
 impl DimensionConfig {
@@ -94,9 +100,27 @@ impl DimensionConfig {
             }),
         };
         let kernel = match self.kernel {
-            KernelConfig::Exponential { radius } => Kernel::Exponential(ExponentialFn { radius }),
-            KernelConfig::Tricubic { radius, exponent } => {
-                Kernel::Tricubic(TricubicFn { radius, exponent })
+            KernelConfig::Exponential { radius } => Kernel::Exponential(ExponentialFn::new(radius)),
+            KernelConfig::Tricubic(inner) => {
+                let radius = match inner.radius {
+                    Some(x) => x,
+                    None => {
+                        let coords_data = match &coords {
+                            Coords::F32(inner) => inner,
+                            _ => panic!("wrong coords data type for tricubic kernel"),
+                        };
+                        let (data_min, data_max) = coords_min_max(&coords_data.data);
+                        let (pred_min, pred_max) = coords_min_max(&coords_data.pred);
+                        let (diff0, diff1) = (data_max - pred_min, pred_max - data_min);
+                        if diff0 > diff1 {
+                            diff0 + 1.0
+                        } else {
+                            diff1 + 1.0
+                        }
+                    }
+                };
+                println!("kernel tricubic, radius: {}", radius);
+                Kernel::Tricubic(TricubicFn::new(radius, inner.exponent))
             }
             KernelConfig::DepthCODEm { radius } => {
                 let maxlvl = self.coords.len() as i32;
@@ -105,4 +129,21 @@ impl DimensionConfig {
         };
         Dimension::new(self.distance, kernel, coords, self.kind)
     }
+}
+
+fn coords_min_max<T: PartialOrd>(coords: &Vec<Vec<T>>) -> (&T, &T) {
+    let mut coords_iter = coords.iter().flatten();
+    let first = coords_iter.next().unwrap();
+    let mut min_max = (first, first);
+
+    coords_iter.for_each(|x| {
+        if x < min_max.0 {
+            min_max.0 = x;
+        }
+        if x > min_max.1 {
+            min_max.1 = x;
+        }
+    });
+
+    min_max
 }

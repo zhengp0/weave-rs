@@ -19,7 +19,7 @@ kernel = { kind = "Exponential", radius = 0.7 }
 kind = "Generic"
 coords = ["year_id"]
 distance = { kind = "Euclidean" }
-kernel = { kind = "Tricubic", radius = 43.0, exponent = 0.5 }
+kernel = { kind = "Tricubic", exponent = 0.5 }
 
 [[dimensions]]
 kind = "Categorical"
