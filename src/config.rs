@@ -7,7 +7,7 @@ use crate::{
     model::{
         dimenion::{Coords, CoordsData, Dimension, DimensionKind},
         distance::Distance,
-        kernel::Kernel,
+        kernel::{DepthCODEmFn, ExponentialFn, Kernel, TricubicFn},
         Weave,
     },
 };
@@ -70,7 +70,15 @@ pub struct DimensionConfig {
     pub kind: DimensionKind,
     pub coords: Vec<String>,
     pub distance: Distance,
-    pub kernel: Kernel,
+    pub kernel: KernelConfig,
+}
+
+#[derive(Deserialize)]
+#[serde(tag = "kind")]
+pub enum KernelConfig {
+    Exponential { radius: f32 },
+    Tricubic { radius: f32, exponent: f32 },
+    DepthCODEm { radius: f32 },
 }
 
 impl DimensionConfig {
@@ -85,6 +93,16 @@ impl DimensionConfig {
                 pred: read_parquet_cols::<i32>(&input.pred.path, &self.coords).unwrap(),
             }),
         };
-        Dimension::new(self.distance, self.kernel, coords, self.kind)
+        let kernel = match self.kernel {
+            KernelConfig::Exponential { radius } => Kernel::Exponential(ExponentialFn { radius }),
+            KernelConfig::Tricubic { radius, exponent } => {
+                Kernel::Tricubic(TricubicFn { radius, exponent })
+            }
+            KernelConfig::DepthCODEm { radius } => {
+                let maxlvl = self.coords.len() as i32;
+                Kernel::DepthCODEm(DepthCODEmFn::new(radius, maxlvl))
+            }
+        };
+        Dimension::new(self.distance, kernel, coords, self.kind)
     }
 }

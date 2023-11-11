@@ -25,4 +25,4 @@ kernel = { kind = "Tricubic", radius = 43.0, exponent = 0.5 }
 kind = "Categorical"
 coords = ["super_region_id", "region_id", "location_id"]
 distance = { kind = "Tree" }
-kernel = { kind = "DepthCODEm", radius = 0.7, maxlvl = 3 }
+kernel = { kind = "DepthCODEm", radius = 0.7 }
