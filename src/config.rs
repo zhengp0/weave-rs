@@ -119,7 +119,6 @@ impl DimensionConfig {
                         }
                     }
                 };
-                println!("kernel tricubic, radius: {}", radius);
                 Kernel::Tricubic(TricubicFn::new(radius, inner.exponent))
             }
             KernelConfig::DepthCODEm { radius } => {

@@ -16,6 +16,7 @@ pub enum Coords {
 pub enum DimensionKind {
     Generic,
     Categorical,
+    Adaptive,
 }
 
 pub struct Dimension {
@@ -35,7 +36,7 @@ impl Dimension {
         }
     }
 
-    pub fn update_weight(&self, i: usize, weight: &mut Vec<f32>) {
+    pub fn update_weight(&mut self, i: usize, weight: &mut Vec<f32>) {
         match self {
             Self {
                 distance: Distance::Euclidean(distance_fn),
@@ -89,9 +90,30 @@ impl Dimension {
                 }
                 for (d, w) in distance.iter().zip(weight.iter_mut()) {
                     let s = norm_map[d];
-                    if s > 1e-16 {
-                        *w *= kernel_fn.call(d) / s;
+                    if s > 0.0 {
+                        *w /= s;
+                        *w *= kernel_fn.call(d);
                     }
+                }
+            }
+            Self {
+                distance: Distance::Euclidean(distance_fn),
+                kernel: Kernel::Tricubic(kernel_fn),
+                coords: Coords::F32(coords),
+                kind: DimensionKind::Adaptive,
+            } => {
+                let x = &coords.data[i];
+                let y_iter = coords.pred.iter();
+                let distance: Vec<f32> = y_iter.map(|y| distance_fn.call(x, y)).collect();
+                kernel_fn.set_radius(
+                    distance
+                        .iter()
+                        .max_by(|x, y| x.partial_cmp(y).unwrap())
+                        .map(|x| x + 1.0)
+                        .unwrap(),
+                );
+                for (d, w) in distance.iter().zip(weight.iter_mut()) {
+                    *w *= kernel_fn.call(d);
                 }
             }
             _ => panic!("cannot update weight"),
@@ -114,7 +136,7 @@ mod tests {
 
     #[test]
     fn test_generic_update_weight() {
-        let dimension = Dimension::new(
+        let mut dimension = Dimension::new(
             Distance::Tree(TreeFn),
             Kernel::DepthCODEm(DepthCODEmFn::new(0.5, 3)),
             coords(),
@@ -128,7 +150,7 @@ mod tests {
 
     #[test]
     fn test_categorical_update_weight() {
-        let dimension = Dimension::new(
+        let mut dimension = Dimension::new(
             Distance::Tree(TreeFn),
             Kernel::DepthCODEm(DepthCODEmFn::new(0.5, 3)),
             coords(),

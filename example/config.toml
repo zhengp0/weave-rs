@@ -16,7 +16,7 @@ distance = { kind = "Euclidean" }
 kernel = { kind = "Exponential", radius = 0.7 }
 
 [[dimensions]]
-kind = "Generic"
+kind = "Adaptive"
 coords = ["year_id"]
 distance = { kind = "Euclidean" }
 kernel = { kind = "Tricubic", exponent = 0.5 }

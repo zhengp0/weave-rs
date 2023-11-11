@@ -27,6 +27,9 @@ impl TricubicFn {
     pub fn new(radius: f32, exponent: f32) -> Self {
         Self { radius, exponent }
     }
+    pub fn set_radius(&mut self, radius: f32) {
+        self.radius = radius;
+    }
     pub fn call(&self, d: &f32) -> f32 {
         (1.0 - (d / self.radius).powf(self.exponent)).powi(3)
     }

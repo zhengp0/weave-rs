@@ -28,9 +28,9 @@ impl Weave {
         }
     }
 
-    fn compute_weighted_avg_for(&self, i: usize) -> f32 {
+    fn compute_weighted_avg_for(&mut self, i: usize) -> f32 {
         let mut weight: Vec<f32> = vec![1.0; self.lens.0];
-        for dim in &self.dimensions {
+        for dim in &mut self.dimensions {
             dim.update_weight(i, &mut weight);
         }
         let s: f32 = weight.iter().sum();
@@ -41,13 +41,13 @@ impl Weave {
             .sum()
     }
 
-    pub fn compute_weighted_avg(&self) -> Vec<f32> {
+    pub fn compute_weighted_avg(&mut self) -> Vec<f32> {
         (0..self.lens.1)
             .map(|i| self.compute_weighted_avg_for(i))
             .collect()
     }
 
-    pub fn run(&self) -> Result<()> {
+    pub fn run(&mut self) -> Result<()> {
         let weighted_avg = self.compute_weighted_avg();
         write_parquet_col::<f32>(&self.output.path, &self.output.values, &weighted_avg)?;
         Ok(())
@@ -100,7 +100,7 @@ mod tests {
 
     #[test]
     fn test_compute_weighted_avg() {
-        let model = setup();
+        let mut model = setup();
         let my_avg = model.compute_weighted_avg();
         let tr_avg = vec![1_f32];
         assert_eq!(my_avg, tr_avg);
