@@ -17,3 +17,9 @@ parquet = "48.0.0"
 serde = { version = "1.0.188", features = ["derive"] }
 toml = "0.8.2"
 
+[dev-dependencies]
+criterion = "0.5"
+
+[[bench]]
+name = "benchmark_small"
+harness = false
