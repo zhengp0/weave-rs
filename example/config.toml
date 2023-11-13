@@ -6,7 +6,7 @@ values = "residual_nos_1"
 path = "example/data/pred.parquet"
 
 [output]
-path = "example/data/result.parquet"
+path = "example/data/my_result.parquet"
 values = "prediction"
 
 [[dimensions]]
@@ -16,7 +16,7 @@ distance = { kind = "Euclidean" }
 kernel = { kind = "Exponential", radius = 0.7 }
 
 [[dimensions]]
-kind = "Adaptive"
+kind = "Generic"
 coords = ["year_id"]
 distance = { kind = "Euclidean" }
 kernel = { kind = "Tricubic", exponent = 0.5 }
