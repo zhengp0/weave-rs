@@ -82,20 +82,24 @@ impl Dimension {
                 let x = &coords.data[i];
                 let y_iter = coords.pred.iter();
                 let mut weight_sum: Vec<f32> = vec![0.0; kernel_fn.maxlvl as usize + 1];
-                let distance: Vec<i32> = y_iter.map(|y| distance_fn.call(x, y)).collect();
+                let distance: Vec<i32> = y_iter
+                    .zip(weight.iter())
+                    .map(|(y, w)| {
+                        let d = distance_fn.call(x, y);
+                        weight_sum[d as usize] += w;
+                        d
+                    })
+                    .collect();
 
                 distance
                     .iter()
-                    .zip(weight.iter())
-                    .for_each(|(d, w)| weight_sum[*d as usize] += w);
-
-                for (d, w) in distance.iter().zip(weight.iter_mut()) {
-                    let s = weight_sum[*d as usize];
-                    if s > 0.0 {
+                    .zip(weight.iter_mut())
+                    .map(|(d, w)| (&weight_sum[*d as usize], d, w))
+                    .filter(|(s, ..)| **s > 0.0)
+                    .for_each(|(s, d, w)| {
                         *w /= s;
                         *w *= kernel_fn.call(d);
-                    }
-                }
+                    });
             }
             Self {
                 distance: Distance::Euclidean(distance_fn),
