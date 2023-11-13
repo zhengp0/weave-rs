@@ -1,9 +1,10 @@
+use crate::data::Matrix;
 use crate::model::{distance::Distance, kernel::Kernel};
 use serde::Deserialize;
 
 pub struct CoordsData<T> {
-    pub data: Vec<Vec<T>>,
-    pub pred: Vec<Vec<T>>,
+    pub data: Matrix<T>,
+    pub pred: Matrix<T>,
 }
 
 pub enum Coords {
@@ -43,8 +44,8 @@ impl Dimension {
                 coords: Coords::F32(coords),
                 kind: DimensionKind::Generic,
             } => {
-                let x = &coords.data[i];
-                let y_iter = coords.pred.iter();
+                let x = coords.data.rows().nth(i).unwrap();
+                let y_iter = coords.pred.rows();
                 for (y, w) in y_iter.zip(weight.iter_mut()) {
                     *w *= kernel_fn.call(&distance_fn.call(x, y));
                 }
@@ -55,8 +56,8 @@ impl Dimension {
                 coords: Coords::F32(coords),
                 kind: DimensionKind::Generic,
             } => {
-                let x = &coords.data[i];
-                let y_iter = coords.pred.iter();
+                let x = coords.data.rows().nth(i).unwrap();
+                let y_iter = coords.pred.rows();
                 for (y, w) in y_iter.zip(weight.iter_mut()) {
                     *w *= kernel_fn.call(&distance_fn.call(x, y));
                 }
@@ -67,8 +68,8 @@ impl Dimension {
                 coords: Coords::I32(coords),
                 kind: DimensionKind::Generic,
             } => {
-                let x = &coords.data[i];
-                let y_iter = coords.pred.iter();
+                let x = coords.data.rows().nth(i).unwrap();
+                let y_iter = coords.pred.rows();
                 for (y, w) in y_iter.zip(weight.iter_mut()) {
                     *w *= kernel_fn.call(&distance_fn.call(x, y));
                 }
@@ -79,8 +80,8 @@ impl Dimension {
                 coords: Coords::I32(coords),
                 kind: DimensionKind::Categorical,
             } => {
-                let x = &coords.data[i];
-                let y_iter = coords.pred.iter();
+                let x = coords.data.rows().nth(i).unwrap();
+                let y_iter = coords.pred.rows();
                 let mut weight_sum: Vec<f32> = vec![0.0; kernel_fn.maxlvl as usize + 1];
                 let distance: Vec<i32> = y_iter
                     .zip(weight.iter())
@@ -107,8 +108,8 @@ impl Dimension {
                 coords: Coords::F32(coords),
                 kind: DimensionKind::Adaptive,
             } => {
-                let x = &coords.data[i];
-                let y_iter = coords.pred.iter();
+                let x = coords.data.rows().nth(i).unwrap();
+                let y_iter = coords.pred.rows();
                 let distance: Vec<f32> = y_iter.map(|y| distance_fn.call(x, y)).collect();
                 kernel_fn.set_radius(
                     distance
@@ -134,8 +135,8 @@ mod tests {
 
     fn coords() -> Coords {
         Coords::I32(CoordsData {
-            data: vec![vec![0, 1, 2]],
-            pred: vec![vec![0, 1, 2], vec![0, 1, 8], vec![0, 6, 7], vec![3, 4, 5]],
+            data: Matrix::new(vec![0, 1, 2], 3),
+            pred: Matrix::new(vec![0, 1, 2, 0, 1, 8, 0, 6, 7, 3, 4, 5], 3),
         })
     }
 

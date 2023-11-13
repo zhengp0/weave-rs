@@ -3,27 +3,51 @@ use parquet::file::reader::{FileReader, SerializedFileReader};
 use parquet::file::{properties::WriterProperties, writer::SerializedFileWriter};
 use parquet::schema::parser::parse_message_type;
 use parquet::{record::Field, schema::types::Type};
+use std::slice::Chunks;
 use std::{collections::HashMap, error::Error, fs::File, result, sync::Arc};
 
 pub mod number;
 
 pub type Result<T> = result::Result<T, Box<dyn Error>>;
 
-pub fn read_parquet_cols<T: Number>(path: &String, colnames: &Vec<String>) -> Result<Vec<Vec<T>>> {
+pub struct Matrix<T> {
+    pub vec: Vec<T>,
+    pub ncols: usize,
+}
+
+impl<T> Matrix<T> {
+    pub fn new(vec: Vec<T>, ncols: usize) -> Self {
+        if vec.len() % ncols != 0 {
+            panic!(
+                "matrix can't be created by vec.len: {}, ncols: {}",
+                vec.len(),
+                ncols
+            );
+        }
+        Self { vec, ncols }
+    }
+
+    pub fn rows(&self) -> Chunks<T> {
+        self.vec.chunks(self.ncols)
+    }
+}
+
+pub fn read_parquet_cols<T: Number>(path: &String, colnames: &Vec<String>) -> Result<Matrix<T>> {
     let file = File::open(path)?;
     let reader = SerializedFileReader::new(file)?;
     let schema = reader.metadata().file_metadata().schema();
     let projection = build_projection(colnames, schema)?;
-    let values = reader
+    let vec: Vec<T> = reader
         .get_row_iter(Some(projection))?
         .map(|row| {
             row.unwrap()
                 .get_column_iter()
                 .map(|(_, field)| cast_field_to_number::<T>(field))
-                .collect()
+                .collect::<Vec<_>>()
         })
+        .flatten()
         .collect();
-    Ok(values)
+    Ok(Matrix::new(vec, colnames.len()))
 }
 
 fn build_projection(colnames: &Vec<String>, schema: &Type) -> Result<Type> {

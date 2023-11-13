@@ -3,7 +3,7 @@ use std::{error, fs};
 use toml;
 
 use crate::{
-    data::{read_parquet_col, read_parquet_cols, read_parquet_nrow},
+    data::{read_parquet_col, read_parquet_cols, read_parquet_nrow, Matrix},
     model::{
         dimenion::{Coords, CoordsData, Dimension, DimensionKind},
         distance::Distance,
@@ -130,8 +130,8 @@ impl DimensionConfig {
     }
 }
 
-fn coords_min_max<T: PartialOrd>(coords: &Vec<Vec<T>>) -> (&T, &T) {
-    let mut coords_iter = coords.iter().flatten();
+fn coords_min_max<T: PartialOrd>(coords: &Matrix<T>) -> (&T, &T) {
+    let mut coords_iter = coords.vec.iter();
     let first = coords_iter.next().unwrap();
     let mut min_max = (first, first);
 
