@@ -20,6 +20,10 @@ toml = "0.8.2"
 [dev-dependencies]
 criterion = "0.5"
 
+[profile.release]
+codegen-units = 1
+panic = "abort"
+
 [[bench]]
 name = "benchmark_small"
 harness = false

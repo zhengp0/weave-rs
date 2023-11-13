@@ -36,7 +36,7 @@ impl Dimension {
         }
     }
 
-    pub fn update_weight(&mut self, i: usize, weight: &mut Vec<f32>) {
+    pub fn update_weight(&mut self, i: usize, weight: &mut [f32]) {
         match self {
             Self {
                 distance: Distance::Euclidean(distance_fn),

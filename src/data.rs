@@ -39,13 +39,12 @@ pub fn read_parquet_cols<T: Number>(path: &str, colnames: &[String]) -> Result<M
     let projection = build_projection(colnames, schema)?;
     let vec: Vec<T> = reader
         .get_row_iter(Some(projection))?
-        .map(|row| {
+        .flat_map(|row| {
             row.unwrap()
                 .get_column_iter()
                 .map(|(_, field)| cast_field_to_number::<T>(field))
                 .collect::<Vec<_>>()
         })
-        .flatten()
         .collect();
     Ok(Matrix::new(vec, colnames.len()))
 }
@@ -89,7 +88,7 @@ pub fn read_parquet_col<T: Number>(path: &str, colname: &str) -> Result<Vec<T>> 
     let file = File::open(path)?;
     let reader = SerializedFileReader::new(file)?;
     let schema = reader.metadata().file_metadata().schema();
-    let projection = build_projection(&vec![colname.to_string()], schema)?;
+    let projection = build_projection(&[colname.to_string()], schema)?;
     let values = reader
         .get_row_iter(Some(projection))?
         .map(|row| {
@@ -107,7 +106,7 @@ pub fn write_parquet_col<T: Number>(path: &str, colname: &str, values: &[T]) -> 
     let file = File::create(path)?;
     let message_type = format!(
         "message schema {{ REQUIRED {} {}; }}",
-        T::physical_type().to_string(),
+        T::physical_type(),
         colname
     );
     let schema = Arc::new(parse_message_type(&message_type)?);
