@@ -32,7 +32,7 @@ impl<T> Matrix<T> {
     }
 }
 
-pub fn read_parquet_cols<T: Number>(path: &String, colnames: &Vec<String>) -> Result<Matrix<T>> {
+pub fn read_parquet_cols<T: Number>(path: &str, colnames: &[String]) -> Result<Matrix<T>> {
     let file = File::open(path)?;
     let reader = SerializedFileReader::new(file)?;
     let schema = reader.metadata().file_metadata().schema();
@@ -50,7 +50,7 @@ pub fn read_parquet_cols<T: Number>(path: &String, colnames: &Vec<String>) -> Re
     Ok(Matrix::new(vec, colnames.len()))
 }
 
-fn build_projection(colnames: &Vec<String>, schema: &Type) -> Result<Type> {
+fn build_projection(colnames: &[String], schema: &Type) -> Result<Type> {
     let basic_info = schema.get_basic_info().clone();
     let field_map: HashMap<&str, &Arc<Type>> = schema
         .get_fields()
@@ -79,13 +79,13 @@ fn cast_field_to_number<D: Number>(field: &Field) -> D {
     }
 }
 
-pub fn read_parquet_nrow(path: &String) -> Result<usize> {
+pub fn read_parquet_nrow(path: &str) -> Result<usize> {
     let file = File::open(path)?;
     let reader = SerializedFileReader::new(file)?;
     Ok(reader.metadata().file_metadata().num_rows() as usize)
 }
 
-pub fn read_parquet_col<T: Number>(path: &String, colname: &String) -> Result<Vec<T>> {
+pub fn read_parquet_col<T: Number>(path: &str, colname: &str) -> Result<Vec<T>> {
     let file = File::open(path)?;
     let reader = SerializedFileReader::new(file)?;
     let schema = reader.metadata().file_metadata().schema();
@@ -103,11 +103,7 @@ pub fn read_parquet_col<T: Number>(path: &String, colname: &String) -> Result<Ve
     Ok(values)
 }
 
-pub fn write_parquet_col<T: Number>(
-    path: &String,
-    colname: &String,
-    values: &Vec<T>,
-) -> Result<()> {
+pub fn write_parquet_col<T: Number>(path: &str, colname: &str, values: &[T]) -> Result<()> {
     let file = File::create(path)?;
     let message_type = format!(
         "message schema {{ REQUIRED {} {}; }}",

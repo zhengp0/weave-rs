@@ -20,7 +20,7 @@ pub struct Config {
 }
 
 impl Config {
-    pub fn from_file(path: &String) -> Result<Config, Box<dyn error::Error>> {
+    pub fn from_file(path: &str) -> Result<Config, Box<dyn error::Error>> {
         let file = fs::read_to_string(path)?;
         let config = toml::from_str(&file)?;
         Ok(config)
