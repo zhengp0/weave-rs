@@ -31,7 +31,8 @@ impl TricubicFn {
         self.radius = radius;
     }
     pub fn call(&self, d: &f32) -> f32 {
-        (1.0 - (d / self.radius).powf(self.exponent)).powi(3)
+        let x = 1.0 - (d / self.radius).powf(self.exponent);
+        x * x * x
     }
 }
 
@@ -54,13 +55,14 @@ impl DepthCODEmFn {
         }
     }
     pub fn call(&self, d: &i32) -> f32 {
-        let d = *d;
-        if d >= self.maxlvl {
+        if d >= &self.maxlvl {
             0.0
-        } else if d == self.maxlvl_minus_one {
-            self.one_minus_radius.powi(d)
         } else {
-            self.one_minus_radius.powi(d) * self.radius
+            let mut result: f32 = (0..*d).map(|_| &self.one_minus_radius).product();
+            if d < &self.maxlvl_minus_one {
+                result *= &self.radius;
+            }
+            result
         }
     }
 }
