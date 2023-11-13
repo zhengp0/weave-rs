@@ -1,6 +1,5 @@
 use crate::model::{distance::Distance, kernel::Kernel};
 use serde::Deserialize;
-use std::collections::HashMap;
 
 pub struct CoordsData<T> {
     pub data: Vec<Vec<T>>,
@@ -82,14 +81,16 @@ impl Dimension {
             } => {
                 let x = &coords.data[i];
                 let y_iter = coords.pred.iter();
-                let mut norm_map = HashMap::new();
+                let mut weight_sum: Vec<f32> = vec![0.0; kernel_fn.maxlvl as usize + 1];
                 let distance: Vec<i32> = y_iter.map(|y| distance_fn.call(x, y)).collect();
 
-                for (d, w) in distance.iter().zip(weight.iter()) {
-                    norm_map.entry(d).and_modify(|x| *x += w).or_insert(*w);
-                }
+                distance
+                    .iter()
+                    .zip(weight.iter())
+                    .for_each(|(d, w)| weight_sum[*d as usize] += w);
+
                 for (d, w) in distance.iter().zip(weight.iter_mut()) {
-                    let s = norm_map[d];
+                    let s = weight_sum[*d as usize];
                     if s > 0.0 {
                         *w /= s;
                         *w *= kernel_fn.call(d);
