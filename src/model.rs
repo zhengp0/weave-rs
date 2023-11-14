@@ -28,9 +28,9 @@ impl Weave {
         }
     }
 
-    fn compute_weighted_avg_for(&mut self, i: usize) -> f32 {
+    pub fn compute_weighted_avg_for(&self, i: usize) -> f32 {
         let mut weight: Vec<f32> = vec![1.0; self.lens.0];
-        for dim in &mut self.dimensions {
+        for dim in &self.dimensions {
             dim.update_weight(i, &mut weight);
         }
         let s: f32 = weight.iter().sum();
