@@ -8,8 +8,8 @@ use crate::model::dimenion::Dimension;
 
 pub struct Weave {
     pub dimensions: Vec<Dimension>,
+    pub lens: (usize, usize),
     values: Vec<f32>,
-    lens: (usize, usize),
     output: Output,
 }
 

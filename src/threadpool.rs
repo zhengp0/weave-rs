@@ -8,6 +8,7 @@ use crate::model::Weave;
 pub struct TaskManager {
     workers: Vec<Worker>,
     tx: Option<mpsc::Sender<usize>>,
+    num_tasks: usize,
 }
 
 impl TaskManager {
@@ -31,6 +32,7 @@ impl TaskManager {
         Self {
             workers,
             tx: Some(tx_parent),
+            num_tasks: source.lens.1,
         }
     }
 
@@ -47,6 +49,13 @@ impl TaskManager {
                 handle.join().unwrap();
             }
         }
+    }
+
+    pub fn run(self) {
+        for i in 0..self.num_tasks {
+            self.execute(i);
+        }
+        self.join()
     }
 }
 
