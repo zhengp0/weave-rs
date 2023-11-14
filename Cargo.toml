@@ -27,3 +27,7 @@ panic = "abort"
 [[bench]]
 name = "benchmark_small"
 harness = false
+
+[[bench]]
+name = "benchmark_small_multi"
+harness = false

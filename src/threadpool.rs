@@ -19,9 +19,8 @@ impl TaskManager {
         let rx_child = Arc::new(Mutex::new(rx_child));
 
         let workers: Vec<Worker> = (0..size)
-            .map(|id| {
+            .map(|_| {
                 Worker::new(
-                    id,
                     Arc::clone(&rx_child),
                     Arc::clone(&source),
                     Arc::clone(&result),
@@ -44,7 +43,6 @@ impl TaskManager {
         drop(self.tx.take());
 
         for worker in &mut self.workers {
-            println!("Shutting down worker {}", worker.id);
             if let Some(handle) = worker.handle.take() {
                 handle.join().unwrap();
             }
@@ -60,13 +58,11 @@ impl TaskManager {
 }
 
 struct Worker {
-    id: usize,
     handle: Option<thread::JoinHandle<()>>,
 }
 
 impl Worker {
     fn new(
-        id: usize,
         rx: Arc<Mutex<mpsc::Receiver<usize>>>,
         source: Arc<Weave>,
         result: Arc<Mutex<Vec<f32>>>,
@@ -78,18 +74,14 @@ impl Worker {
                 Ok(i) => {
                     let x = source.compute_weighted_avg_for(i);
                     *result.lock().unwrap().iter_mut().nth(i).unwrap() = x;
-                    // println!("{:?}", result);
-                    // println!("worker id: {}, i: {}, x: {}", id, i, x);
                 }
                 Err(_) => {
-                    // println!("Worker {id} disconnected");
                     break;
                 }
             }
         });
 
         Self {
-            id,
             handle: Some(handle),
         }
     }
