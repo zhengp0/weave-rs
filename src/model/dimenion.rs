@@ -36,7 +36,7 @@ impl Dimension {
         }
     }
 
-    pub fn update_weight(&mut self, i: usize, weight: &mut [f32]) {
+    pub fn update_weight(&self, i: usize, weight: &mut [f32]) {
         match self {
             Self {
                 distance: Distance::Euclidean(distance_fn),
@@ -59,7 +59,7 @@ impl Dimension {
                 let x = coords.data.rows().nth(i).unwrap();
                 let y_iter = coords.pred.rows();
                 for (y, w) in y_iter.zip(weight.iter_mut()) {
-                    *w *= kernel_fn.call(&distance_fn.call(x, y));
+                    *w *= kernel_fn.call(&distance_fn.call(x, y), &kernel_fn.radius);
                 }
             }
             Self {
@@ -111,15 +111,13 @@ impl Dimension {
                 let x = coords.data.rows().nth(i).unwrap();
                 let y_iter = coords.pred.rows();
                 let distance: Vec<f32> = y_iter.map(|y| distance_fn.call(x, y)).collect();
-                kernel_fn.set_radius(
-                    distance
-                        .iter()
-                        .max_by(|x, y| x.partial_cmp(y).unwrap())
-                        .map(|x| x + 1.0)
-                        .unwrap(),
-                );
+                let radius = distance
+                    .iter()
+                    .max_by(|x, y| x.partial_cmp(y).unwrap())
+                    .map(|x| x + 1.0)
+                    .unwrap();
                 for (d, w) in distance.iter().zip(weight.iter_mut()) {
-                    *w *= kernel_fn.call(d);
+                    *w *= kernel_fn.call(d, &radius);
                 }
             }
             _ => panic!("cannot update weight"),
@@ -142,7 +140,7 @@ mod tests {
 
     #[test]
     fn test_generic_update_weight() {
-        let mut dimension = Dimension::new(
+        let dimension = Dimension::new(
             Distance::Tree(TreeFn),
             Kernel::DepthCODEm(DepthCODEmFn::new(0.5, 3)),
             coords(),
@@ -156,7 +154,7 @@ mod tests {
 
     #[test]
     fn test_categorical_update_weight() {
-        let mut dimension = Dimension::new(
+        let dimension = Dimension::new(
             Distance::Tree(TreeFn),
             Kernel::DepthCODEm(DepthCODEmFn::new(0.5, 3)),
             coords(),

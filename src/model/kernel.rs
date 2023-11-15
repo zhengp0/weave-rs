@@ -27,11 +27,8 @@ impl TricubicFn {
     pub fn new(radius: f32, exponent: f32) -> Self {
         Self { radius, exponent }
     }
-    pub fn set_radius(&mut self, radius: f32) {
-        self.radius = radius;
-    }
-    pub fn call(&self, d: &f32) -> f32 {
-        let x = 1.0 - (d / self.radius).powf(self.exponent);
+    pub fn call(&self, d: &f32, radius: &f32) -> f32 {
+        let x = 1.0 - (d / radius).powf(self.exponent);
         x * x * x
     }
 }
@@ -84,7 +81,7 @@ mod tests {
     fn test_tricubic() {
         let kernel_fn = TricubicFn::new(4.0, 0.5);
 
-        let my_weight = kernel_fn.call(&1.0);
+        let my_weight = kernel_fn.call(&1.0, &kernel_fn.radius);
         let ok_weight = 0.125_f32;
         assert_eq!(my_weight, ok_weight);
     }

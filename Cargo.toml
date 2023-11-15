@@ -13,7 +13,7 @@ rust-version = "1.73"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-parquet = "48.0.0"
+parquet = "49.0.0"
 serde = { version = "1.0.188", features = ["derive"] }
 toml = "0.8.2"
 
@@ -26,4 +26,8 @@ panic = "abort"
 
 [[bench]]
 name = "benchmark_small"
+harness = false
+
+[[bench]]
+name = "benchmark_small_multi"
 harness = false
