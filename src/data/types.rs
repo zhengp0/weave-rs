@@ -1,7 +1,7 @@
 use core::convert::From;
 use parquet::basic::Type;
 use parquet::data_type::{BoolType, DataType, DoubleType, FloatType, Int32Type, Int64Type};
-use std::fmt::Display;
+use std::{fmt::Display, slice::Chunks};
 
 pub trait Cast<T>: Sized {
     fn from(value: T) -> Self;
@@ -9,155 +9,155 @@ pub trait Cast<T>: Sized {
 
 // convert bool
 impl Cast<bool> for bool {
-    fn from(value: bool) -> bool {
+    fn from(value: bool) -> Self {
         value
     }
 }
 
 impl Cast<i32> for bool {
-    fn from(value: i32) -> bool {
+    fn from(value: i32) -> Self {
         value != 0
     }
 }
 
 impl Cast<i64> for bool {
-    fn from(value: i64) -> bool {
+    fn from(value: i64) -> Self {
         value != 0
     }
 }
 
 impl Cast<f32> for bool {
-    fn from(value: f32) -> bool {
+    fn from(value: f32) -> Self {
         value != 0.0
     }
 }
 
 impl Cast<f64> for bool {
-    fn from(value: f64) -> bool {
+    fn from(value: f64) -> Self {
         value != 0.0
     }
 }
 
 // convert i32
 impl Cast<bool> for i32 {
-    fn from(value: bool) -> i32 {
-        <i32 as From<bool>>::from(value)
+    fn from(value: bool) -> Self {
+        <Self as From<bool>>::from(value)
     }
 }
 
 impl Cast<i32> for i32 {
-    fn from(value: i32) -> i32 {
+    fn from(value: i32) -> Self {
         value
     }
 }
 
 impl Cast<i64> for i32 {
-    fn from(value: i64) -> i32 {
-        value as i32
+    fn from(value: i64) -> Self {
+        value as Self
     }
 }
 
 impl Cast<f32> for i32 {
-    fn from(value: f32) -> i32 {
-        value as i32
+    fn from(value: f32) -> Self {
+        value as Self
     }
 }
 
 impl Cast<f64> for i32 {
-    fn from(value: f64) -> i32 {
-        value as i32
+    fn from(value: f64) -> Self {
+        value as Self
     }
 }
 
 // convert i64
 impl Cast<bool> for i64 {
-    fn from(value: bool) -> i64 {
-        <i64 as From<bool>>::from(value)
+    fn from(value: bool) -> Self {
+        <Self as From<bool>>::from(value)
     }
 }
 
 impl Cast<i32> for i64 {
-    fn from(value: i32) -> i64 {
-        <i64 as From<i32>>::from(value)
+    fn from(value: i32) -> Self {
+        <Self as From<i32>>::from(value)
     }
 }
 
 impl Cast<i64> for i64 {
-    fn from(value: i64) -> i64 {
+    fn from(value: i64) -> Self {
         value
     }
 }
 
 impl Cast<f32> for i64 {
-    fn from(value: f32) -> i64 {
-        value as i64
+    fn from(value: f32) -> Self {
+        value as Self
     }
 }
 
 impl Cast<f64> for i64 {
-    fn from(value: f64) -> i64 {
-        value as i64
+    fn from(value: f64) -> Self {
+        value as Self
     }
 }
 
 // convert f32
 impl Cast<bool> for f32 {
-    fn from(value: bool) -> f32 {
-        <f32 as From<bool>>::from(value)
+    fn from(value: bool) -> Self {
+        <Self as From<bool>>::from(value)
     }
 }
 
 impl Cast<i32> for f32 {
-    fn from(value: i32) -> f32 {
-        value as f32
+    fn from(value: i32) -> Self {
+        value as Self
     }
 }
 
 impl Cast<i64> for f32 {
-    fn from(value: i64) -> f32 {
-        value as f32
+    fn from(value: i64) -> Self {
+        value as Self
     }
 }
 
 impl Cast<f32> for f32 {
-    fn from(value: f32) -> f32 {
+    fn from(value: f32) -> Self {
         value
     }
 }
 
 impl Cast<f64> for f32 {
-    fn from(value: f64) -> f32 {
-        value as f32
+    fn from(value: f64) -> Self {
+        value as Self
     }
 }
 
 // convert f64
 impl Cast<bool> for f64 {
-    fn from(value: bool) -> f64 {
-        <f64 as From<bool>>::from(value)
+    fn from(value: bool) -> Self {
+        <Self as From<bool>>::from(value)
     }
 }
 
 impl Cast<i32> for f64 {
-    fn from(value: i32) -> f64 {
-        <f64 as From<i32>>::from(value)
+    fn from(value: i32) -> Self {
+        <Self as From<i32>>::from(value)
     }
 }
 
 impl Cast<i64> for f64 {
-    fn from(value: i64) -> f64 {
-        value as f64
+    fn from(value: i64) -> Self {
+        value as Self
     }
 }
 
 impl Cast<f32> for f64 {
-    fn from(value: f32) -> f64 {
-        <f64 as From<f32>>::from(value)
+    fn from(value: f32) -> Self {
+        <Self as From<f32>>::from(value)
     }
 }
 
 impl Cast<f64> for f64 {
-    fn from(value: f64) -> f64 {
+    fn from(value: f64) -> Self {
         value
     }
 }
@@ -215,4 +215,26 @@ impl<T> Number for T where
         + Display
         + ParquetDataType
 {
+}
+
+pub struct Matrix<T> {
+    pub vec: Vec<T>,
+    pub ncols: usize,
+}
+
+impl<T> Matrix<T> {
+    pub fn new(vec: Vec<T>, ncols: usize) -> Self {
+        if vec.len() % ncols != 0 {
+            panic!(
+                "matrix can't be created by vec.len: {}, ncols: {}",
+                vec.len(),
+                ncols
+            );
+        }
+        Self { vec, ncols }
+    }
+
+    pub fn rows(&self) -> Chunks<T> {
+        self.vec.chunks(self.ncols)
+    }
 }

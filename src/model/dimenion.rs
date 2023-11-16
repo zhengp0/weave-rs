@@ -1,4 +1,4 @@
-use crate::data::Matrix;
+use crate::data::types::Matrix;
 use crate::model::{distance::Distance, kernel::Kernel};
 use serde::Deserialize;
 

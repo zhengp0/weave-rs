@@ -2,9 +2,9 @@ pub mod dimenion;
 pub mod distance;
 pub mod kernel;
 
-use crate::config::Output;
-use crate::data::{write_parquet_col, Result};
-use crate::model::dimenion::Dimension;
+use crate::{
+    config::Output, data::io::write_parquet_col, error::Result, model::dimenion::Dimension,
+};
 
 pub struct Weave {
     pub dimensions: Vec<Dimension>,
@@ -62,7 +62,7 @@ mod tests {
         kernel::{ExponentialFn, Kernel, TricubicFn},
         *,
     };
-    use crate::data::Matrix;
+    use crate::data::types::Matrix;
 
     fn setup() -> Weave {
         // dimension 0

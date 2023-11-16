@@ -3,7 +3,10 @@ use std::{error, fs};
 use toml;
 
 use crate::{
-    data::{read_parquet_col, read_parquet_cols, read_parquet_nrow, Matrix},
+    data::{
+        io::{read_parquet_col, read_parquet_cols, read_parquet_nrow},
+        types::Matrix,
+    },
     model::{
         dimenion::{Coords, CoordsData, Dimension, DimensionKind},
         distance::Distance,
