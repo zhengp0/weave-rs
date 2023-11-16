@@ -22,15 +22,15 @@ pub struct WeaveBuilder {
 impl WeaveBuilder {
     pub fn from_file(path: &str) -> Result<WeaveBuilder, Box<dyn error::Error>> {
         let file = fs::read_to_string(path)?;
-        let config = toml::from_str(&file)?;
-        Ok(config)
+        let builder = toml::from_str(&file)?;
+        Ok(builder)
     }
 
     pub fn build(self) -> Weave {
         let dimensions: Vec<Dimension> = self
             .dimensions
             .into_iter()
-            .map(|dim_config| dim_config.into_dimension(&self.input))
+            .map(|dim_builder| dim_builder.build(&self.input))
             .collect();
         let values =
             read_parquet_col::<f32>(&self.input.data.path, &self.input.data.values).unwrap();
@@ -66,6 +66,68 @@ pub struct Output {
 }
 
 #[derive(Deserialize)]
+#[serde(tag = "kind")]
+pub enum KernelBuilder {
+    Exponential { radius: f32 },
+    Tricubic(TricubicFnBuilder),
+    DepthCODEm(DepthCODEmFnBuilder),
+}
+
+impl KernelBuilder {
+    pub fn build(self, coords: &Coords) -> Kernel {
+        match self {
+            Self::Exponential { radius } => Kernel::Exponential(ExponentialFn::new(radius)),
+            Self::Tricubic(builder) => Kernel::Tricubic(builder.build(coords)),
+            Self::DepthCODEm(builder) => Kernel::DepthCODEm(builder.build(coords)),
+        }
+    }
+}
+
+#[derive(Deserialize)]
+pub struct TricubicFnBuilder {
+    radius: Option<f32>,
+    exponent: f32,
+}
+
+impl TricubicFnBuilder {
+    fn build(self, coords: &Coords) -> TricubicFn {
+        let radius = match self.radius {
+            Some(x) => x,
+            None => {
+                let coords_data = match coords {
+                    Coords::F32(inner) => inner,
+                    _ => panic!("wrong coords data type for Tricubic kernel"),
+                };
+                let (data_min, data_max) = coords_min_max(&coords_data.data);
+                let (pred_min, pred_max) = coords_min_max(&coords_data.pred);
+                let (diff0, diff1) = (data_max - pred_min, pred_max - data_min);
+                if diff0 > diff1 {
+                    diff0 + 1.0
+                } else {
+                    diff1 + 1.0
+                }
+            }
+        };
+        TricubicFn::new(radius, self.exponent)
+    }
+}
+
+#[derive(Deserialize)]
+pub struct DepthCODEmFnBuilder {
+    radius: f32,
+}
+
+impl DepthCODEmFnBuilder {
+    pub fn build(self, coords: &Coords) -> DepthCODEmFn {
+        let maxlvl = match coords {
+            Coords::I32(inner) => inner.data.ncols as i32,
+            _ => panic!("wrong coords data type for DepthCODEm kernel"),
+        };
+        DepthCODEmFn::new(self.radius, maxlvl)
+    }
+}
+
+#[derive(Deserialize)]
 pub struct DimensionBuilder {
     pub kind: DimensionKind,
     pub coords: Vec<String>,
@@ -73,22 +135,8 @@ pub struct DimensionBuilder {
     pub kernel: KernelBuilder,
 }
 
-#[derive(Deserialize)]
-#[serde(tag = "kind")]
-pub enum KernelBuilder {
-    Exponential { radius: f32 },
-    Tricubic(TricubicBuilder),
-    DepthCODEm { radius: f32 },
-}
-
-#[derive(Deserialize)]
-pub struct TricubicBuilder {
-    radius: Option<f32>,
-    exponent: f32,
-}
-
 impl DimensionBuilder {
-    pub fn into_dimension(self, input: &Input) -> Dimension {
+    pub fn build(self, input: &Input) -> Dimension {
         let coords = match self.distance {
             Distance::Euclidean(_) => Coords::F32(CoordsData {
                 data: read_parquet_cols::<f32>(&input.data.path, &self.coords).unwrap(),
@@ -99,35 +147,7 @@ impl DimensionBuilder {
                 pred: read_parquet_cols::<i32>(&input.pred.path, &self.coords).unwrap(),
             }),
         };
-        let kernel = match self.kernel {
-            KernelBuilder::Exponential { radius } => {
-                Kernel::Exponential(ExponentialFn::new(radius))
-            }
-            KernelBuilder::Tricubic(inner) => {
-                let radius = match inner.radius {
-                    Some(x) => x,
-                    None => {
-                        let coords_data = match &coords {
-                            Coords::F32(inner) => inner,
-                            _ => panic!("wrong coords data type for tricubic kernel"),
-                        };
-                        let (data_min, data_max) = coords_min_max(&coords_data.data);
-                        let (pred_min, pred_max) = coords_min_max(&coords_data.pred);
-                        let (diff0, diff1) = (data_max - pred_min, pred_max - data_min);
-                        if diff0 > diff1 {
-                            diff0 + 1.0
-                        } else {
-                            diff1 + 1.0
-                        }
-                    }
-                };
-                Kernel::Tricubic(TricubicFn::new(radius, inner.exponent))
-            }
-            KernelBuilder::DepthCODEm { radius } => {
-                let maxlvl = self.coords.len() as i32;
-                Kernel::DepthCODEm(DepthCODEmFn::new(radius, maxlvl))
-            }
-        };
+        let kernel = self.kernel.build(&coords);
         Dimension::new(self.distance, kernel, coords, self.kind)
     }
 }
