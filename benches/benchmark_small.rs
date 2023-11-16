@@ -1,10 +1,10 @@
 use criterion::{criterion_group, criterion_main, Criterion};
-use weavers::config::Config;
+use weavers::config::WeaveBuilder;
 
 pub fn criterion_benchmark(c: &mut Criterion) {
     let path = "benches/small/config.toml".to_string();
-    let config = Config::from_file(&path).unwrap();
-    let weave = config.into_weave();
+    let builder = WeaveBuilder::from_toml(&path).unwrap();
+    let weave = builder.build();
 
     let mut group = c.benchmark_group("weave-compute_weighted_avg");
     group.sample_size(10);
