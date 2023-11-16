@@ -3,7 +3,7 @@ use weavers::config::WeaveBuilder;
 
 pub fn criterion_benchmark(c: &mut Criterion) {
     let path = "benches/small/config.toml".to_string();
-    let builder = WeaveBuilder::from_file(&path).unwrap();
+    let builder = WeaveBuilder::from_toml(&path).unwrap();
     let weave = builder.build();
 
     let mut group = c.benchmark_group("weave-compute_weighted_avg");

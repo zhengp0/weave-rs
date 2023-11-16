@@ -5,7 +5,7 @@ use weavers::threadpool::TaskManager;
 fn main() {
     // TODO: hanle command line argument more elegantly
     let args: Vec<String> = std::env::args().collect();
-    let builder = WeaveBuilder::from_file(&args[1]).expect("have trouble loading the file");
+    let builder = WeaveBuilder::from_toml(&args[1]).expect("have trouble loading the file");
     let weave = builder.build();
 
     // weave.run().unwrap();

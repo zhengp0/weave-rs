@@ -4,7 +4,7 @@ use weavers::{config::WeaveBuilder, threadpool::TaskManager};
 
 pub fn criterion_benchmark(c: &mut Criterion) {
     let path = "benches/small/config.toml".to_string();
-    let builder = WeaveBuilder::from_file(&path).unwrap();
+    let builder = WeaveBuilder::from_toml(&path).unwrap();
     let weave = builder.build();
 
     let source = Arc::new(weave);

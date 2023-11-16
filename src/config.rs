@@ -20,7 +20,7 @@ pub struct WeaveBuilder {
 }
 
 impl WeaveBuilder {
-    pub fn from_file(path: &str) -> Result<WeaveBuilder, Box<dyn error::Error>> {
+    pub fn from_toml(path: &str) -> Result<WeaveBuilder, Box<dyn error::Error>> {
         let file = fs::read_to_string(path)?;
         let builder = toml::from_str(&file)?;
         Ok(builder)
