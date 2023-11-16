@@ -13,20 +13,20 @@ use crate::{
 };
 
 #[derive(Deserialize)]
-pub struct Config {
+pub struct WeaveBuilder {
     pub input: Input,
     pub output: Output,
-    pub dimensions: Vec<DimensionConfig>,
+    pub dimensions: Vec<DimensionBuilder>,
 }
 
-impl Config {
-    pub fn from_file(path: &str) -> Result<Config, Box<dyn error::Error>> {
+impl WeaveBuilder {
+    pub fn from_file(path: &str) -> Result<WeaveBuilder, Box<dyn error::Error>> {
         let file = fs::read_to_string(path)?;
         let config = toml::from_str(&file)?;
         Ok(config)
     }
 
-    pub fn into_weave(self) -> Weave {
+    pub fn build(self) -> Weave {
         let dimensions: Vec<Dimension> = self
             .dimensions
             .into_iter()
@@ -66,28 +66,28 @@ pub struct Output {
 }
 
 #[derive(Deserialize)]
-pub struct DimensionConfig {
+pub struct DimensionBuilder {
     pub kind: DimensionKind,
     pub coords: Vec<String>,
     pub distance: Distance,
-    pub kernel: KernelConfig,
+    pub kernel: KernelBuilder,
 }
 
 #[derive(Deserialize)]
 #[serde(tag = "kind")]
-pub enum KernelConfig {
+pub enum KernelBuilder {
     Exponential { radius: f32 },
-    Tricubic(TricubicConfig),
+    Tricubic(TricubicBuilder),
     DepthCODEm { radius: f32 },
 }
 
 #[derive(Deserialize)]
-pub struct TricubicConfig {
+pub struct TricubicBuilder {
     radius: Option<f32>,
     exponent: f32,
 }
 
-impl DimensionConfig {
+impl DimensionBuilder {
     pub fn into_dimension(self, input: &Input) -> Dimension {
         let coords = match self.distance {
             Distance::Euclidean(_) => Coords::F32(CoordsData {
@@ -100,8 +100,10 @@ impl DimensionConfig {
             }),
         };
         let kernel = match self.kernel {
-            KernelConfig::Exponential { radius } => Kernel::Exponential(ExponentialFn::new(radius)),
-            KernelConfig::Tricubic(inner) => {
+            KernelBuilder::Exponential { radius } => {
+                Kernel::Exponential(ExponentialFn::new(radius))
+            }
+            KernelBuilder::Tricubic(inner) => {
                 let radius = match inner.radius {
                     Some(x) => x,
                     None => {
@@ -121,7 +123,7 @@ impl DimensionConfig {
                 };
                 Kernel::Tricubic(TricubicFn::new(radius, inner.exponent))
             }
-            KernelConfig::DepthCODEm { radius } => {
+            KernelBuilder::DepthCODEm { radius } => {
                 let maxlvl = self.coords.len() as i32;
                 Kernel::DepthCODEm(DepthCODEmFn::new(radius, maxlvl))
             }

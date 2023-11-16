@@ -1,12 +1,12 @@
 use std::sync::{Arc, Mutex};
-use weavers::config::Config;
+use weavers::config::WeaveBuilder;
 use weavers::threadpool::TaskManager;
 
 fn main() {
     // TODO: hanle command line argument more elegantly
     let args: Vec<String> = std::env::args().collect();
-    let config = Config::from_file(&args[1]).expect("have trouble loading the file");
-    let weave = config.into_weave();
+    let builder = WeaveBuilder::from_file(&args[1]).expect("have trouble loading the file");
+    let weave = builder.build();
 
     // weave.run().unwrap();
 
