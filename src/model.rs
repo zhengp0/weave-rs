@@ -2,15 +2,13 @@ pub mod dimenion;
 pub mod distance;
 pub mod kernel;
 
-use crate::{
-    config::Output, data::io::write_parquet_col, error::Result, model::dimenion::Dimension,
-};
+use crate::{config::Output, model::dimenion::Dimension};
 
 pub struct Weave {
     pub dimensions: Vec<Dimension>,
     pub lens: (usize, usize),
-    values: Vec<f32>,
-    output: Output,
+    pub values: Vec<f32>,
+    pub output: Output,
 }
 
 impl Weave {
@@ -28,7 +26,7 @@ impl Weave {
         }
     }
 
-    pub fn compute_weighted_avg_for(&self, i: usize) -> f32 {
+    pub fn avg_for(&self, i: usize) -> f32 {
         let mut weight: Vec<f32> = vec![1.0; self.lens.0];
         for dim in &self.dimensions {
             dim.update_weight(i, &mut weight);
@@ -39,18 +37,6 @@ impl Weave {
             .zip(weight.iter())
             .map(|(x, w)| x * w / s)
             .sum()
-    }
-
-    pub fn compute_weighted_avg(&self) -> Vec<f32> {
-        (0..self.lens.1)
-            .map(|i| self.compute_weighted_avg_for(i))
-            .collect()
-    }
-
-    pub fn run(&self) -> Result<()> {
-        let weighted_avg = self.compute_weighted_avg();
-        write_parquet_col::<f32>(&self.output.path, &self.output.values, &weighted_avg)?;
-        Ok(())
     }
 }
 
@@ -102,8 +88,8 @@ mod tests {
     #[test]
     fn test_compute_weighted_avg() {
         let model = setup();
-        let my_avg = model.compute_weighted_avg();
-        let tr_avg = vec![1_f32];
+        let my_avg = model.avg_for(0);
+        let tr_avg = 1_f32;
         assert_eq!(my_avg, tr_avg);
     }
 }
