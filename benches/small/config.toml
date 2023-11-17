@@ -1,0 +1,28 @@
+[input.data]
+path = "benches/small/data.parquet"
+values = "values"
+
+[input.pred]
+path = "benches/small/pred.parquet"
+
+[output]
+path = "benches/small/my_result.parquet"
+values = "prediction"
+
+[[dimensions]]
+kind = "Generic"
+coords = ["age_mid"]
+distance = { kind = "Euclidean" }
+kernel = { kind = "Exponential", radius = 0.7 }
+
+[[dimensions]]
+kind = "Generic"
+coords = ["year_id"]
+distance = { kind = "Euclidean" }
+kernel = { kind = "Tricubic", exponent = 0.5 }
+
+[[dimensions]]
+kind = "Categorical"
+coords = ["super_region_id", "region_id", "location_id"]
+distance = { kind = "Tree" }
+kernel = { kind = "DepthCODEm", radius = 0.7 }
