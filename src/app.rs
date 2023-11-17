@@ -1,6 +1,11 @@
-use crate::{config::WeaveBuilder, data::io::write_parquet_col, error::Result, model::Weave};
+use crate::{
+    config::WeaveBuilder,
+    data::{io::write_parquet_col, types::AtomicF32},
+    error::Result,
+    model::Weave,
+};
 use crossbeam_utils::thread;
-use std::sync::{mpsc, Mutex};
+use std::sync::{atomic::Ordering, mpsc, Mutex};
 
 #[derive(Default)]
 pub struct Application {
@@ -26,7 +31,9 @@ impl Application {
 
     pub fn avg_multi_thread(&self, num_threads: usize) -> Vec<f32> {
         let weave = self.model.as_ref().unwrap();
-        let result = Mutex::new(vec![0.0_f32; weave.lens.1]);
+        let result: Vec<AtomicF32> = (0..weave.lens.1)
+            .map(|_| AtomicF32::new(0.0 as f32))
+            .collect();
         let (tx, rx) = mpsc::channel::<usize>();
         let rx = Mutex::new(rx);
         thread::scope(|scope| {
@@ -35,7 +42,7 @@ impl Application {
                     let message = rx.lock().unwrap().recv();
                     match message {
                         Ok(i) => {
-                            *result.lock().unwrap().iter_mut().nth(i).unwrap() = weave.avg_for(i);
+                            result[i].store(weave.avg_for(i), Ordering::Relaxed);
                         }
                         Err(_) => {
                             break;
@@ -50,8 +57,10 @@ impl Application {
         })
         .unwrap();
 
-        let result = result.lock().unwrap().to_vec();
         result
+            .into_iter()
+            .map(|v| v.load(Ordering::Relaxed))
+            .collect()
     }
 
     pub fn run(&self, num_threads: usize) -> Result<()> {

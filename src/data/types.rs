@@ -1,7 +1,11 @@
 use core::convert::From;
 use parquet::basic::Type;
 use parquet::data_type::{BoolType, DataType, DoubleType, FloatType, Int32Type, Int64Type};
-use std::{fmt::Display, slice::Chunks};
+use std::{
+    fmt::{Debug, Display},
+    slice::Chunks,
+    sync::atomic::{AtomicU32, Ordering},
+};
 
 pub trait Cast<T>: Sized {
     fn from(value: T) -> Self;
@@ -236,5 +240,23 @@ impl<T> Matrix<T> {
 
     pub fn rows(&self) -> Chunks<T> {
         self.vec.chunks(self.ncols)
+    }
+}
+
+pub struct AtomicF32(AtomicU32);
+impl AtomicF32 {
+    pub fn new(val: f32) -> Self {
+        Self(AtomicU32::new(val.to_bits()))
+    }
+    pub fn load(&self, order: Ordering) -> f32 {
+        f32::from_bits(self.0.load(order))
+    }
+    pub fn store(&self, val: f32, order: Ordering) {
+        self.0.store(val.to_bits(), order)
+    }
+}
+impl Debug for AtomicF32 {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        Debug::fmt(&self.load(Ordering::Relaxed), f)
     }
 }
