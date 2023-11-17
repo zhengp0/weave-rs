@@ -5,6 +5,6 @@ fn main() {
     let args: Vec<String> = std::env::args().collect();
     let app = Application::new().load_model(&args[1]).unwrap();
 
-    let result = app.ave_multi_thread(4);
+    let result = app.avg_multi_thread(4);
     println!("result: {:?}", result);
 }

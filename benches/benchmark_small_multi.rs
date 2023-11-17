@@ -7,7 +7,7 @@ pub fn criterion_benchmark(c: &mut Criterion) {
 
     let mut group = c.benchmark_group("weave-compute_weighted_avg");
     group.sample_size(10);
-    group.bench_function("small_multi", |b| b.iter(|| app.ave_multi_thread(5)));
+    group.bench_function("small_multi", |b| b.iter(|| app.avg_multi_thread(5)));
     group.finish();
 }
 
