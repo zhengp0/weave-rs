@@ -72,8 +72,7 @@ impl Worker {
 
             match message {
                 Ok(i) => {
-                    let x = source.compute_weighted_avg_for(i);
-                    *result.lock().unwrap().iter_mut().nth(i).unwrap() = x;
+                    *result.lock().unwrap().iter_mut().nth(i).unwrap() = source.avg_for(i);
                 }
                 Err(_) => {
                     break;

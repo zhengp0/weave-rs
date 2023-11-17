@@ -1,21 +1,10 @@
-use std::sync::{Arc, Mutex};
-use weavers::config::WeaveBuilder;
-use weavers::threadpool::TaskManager;
+use weavers::app::Application;
 
 fn main() {
     // TODO: hanle command line argument more elegantly
     let args: Vec<String> = std::env::args().collect();
-    let builder = WeaveBuilder::from_toml(&args[1]).expect("have trouble loading the file");
-    let weave = builder.build();
+    let app = Application::new().load_model(&args[1]).unwrap();
 
-    // weave.run().unwrap();
-
-    let weave = Arc::new(weave);
-    let result = Arc::new(Mutex::new(vec![0.0_f32; weave.lens.1]));
-
-    let manager = TaskManager::new(4, &weave, &result);
-    manager.run();
-
-    let result = result.lock().unwrap();
+    let result = app.ave_multi_thread(4);
     println!("result: {:?}", result);
 }

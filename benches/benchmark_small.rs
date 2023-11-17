@@ -1,14 +1,13 @@
 use criterion::{criterion_group, criterion_main, Criterion};
-use weavers::config::WeaveBuilder;
+use weavers::app::Application;
 
 pub fn criterion_benchmark(c: &mut Criterion) {
-    let path = "benches/small/config.toml".to_string();
-    let builder = WeaveBuilder::from_toml(&path).unwrap();
-    let weave = builder.build();
+    let path = "benches/small/config.toml";
+    let app = Application::new().load_model(path).unwrap();
 
     let mut group = c.benchmark_group("weave-compute_weighted_avg");
     group.sample_size(10);
-    group.bench_function("small", |b| b.iter(|| weave.compute_weighted_avg()));
+    group.bench_function("small", |b| b.iter(|| app.avg_single_thread()));
     group.finish();
 }
 
