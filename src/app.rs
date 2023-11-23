@@ -31,9 +31,7 @@ impl Application {
 
     pub fn avg_multi_thread(&self, num_threads: usize) -> Vec<f32> {
         let weave = self.model.as_ref().unwrap();
-        let result: Vec<AtomicF32> = (0..weave.lens.1)
-            .map(|_| AtomicF32::new(0.0 as f32))
-            .collect();
+        let result: Vec<AtomicF32> = (0..weave.lens.1).map(|_| AtomicF32::new(0.0_f32)).collect();
         let (tx, rx) = mpsc::channel::<usize>();
         let rx = Mutex::new(rx);
         thread::scope(|scope| {

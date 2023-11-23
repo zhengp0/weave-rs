@@ -10,6 +10,7 @@ pub enum Distance {
 #[derive(Deserialize)]
 pub struct EuclideanFn;
 impl EuclideanFn {
+    #[inline]
     pub fn call(&self, x: &[f32], y: &[f32]) -> f32 {
         (x[0] - y[0]).abs()
     }
@@ -18,6 +19,7 @@ impl EuclideanFn {
 #[derive(Deserialize)]
 pub struct TreeFn;
 impl TreeFn {
+    #[inline]
     pub fn call(&self, x: &[i32], y: &[i32]) -> i32 {
         let x_iter = x.iter().rev();
         let y_iter = y.iter().rev();

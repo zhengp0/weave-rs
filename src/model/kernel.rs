@@ -14,6 +14,7 @@ impl ExponentialFn {
     pub fn new(radius: f32) -> Self {
         Self { radius }
     }
+    #[inline]
     pub fn call(&self, d: &f32) -> f32 {
         (-(d / self.radius)).exp()
     }
@@ -27,6 +28,7 @@ impl TricubicFn {
     pub fn new(radius: f32, exponent: f32) -> Self {
         Self { radius, exponent }
     }
+    #[inline]
     pub fn call(&self, d: &f32, radius: &f32) -> f32 {
         let x = 1.0 - (d / radius).powf(self.exponent);
         x * x * x
@@ -51,6 +53,7 @@ impl DepthCODEmFn {
             maxlvl_minus_one,
         }
     }
+    #[inline]
     pub fn call(&self, d: &i32) -> f32 {
         if d >= &self.maxlvl {
             0.0
