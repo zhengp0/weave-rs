@@ -1,3 +1,4 @@
+use crate::model::distance::{euclidean, tree};
 use serde::Deserialize;
 
 pub enum Kernel {
@@ -15,6 +16,10 @@ impl ExponentialFn {
         Self { radius }
     }
     #[inline]
+    pub fn distance(&self, x: &[f32], y: &[f32]) -> f32 {
+        euclidean(x, y)
+    }
+    #[inline]
     pub fn call(&self, d: &f32) -> f32 {
         (-(d / self.radius)).exp()
     }
@@ -27,6 +32,10 @@ pub struct TricubicFn {
 impl TricubicFn {
     pub fn new(radius: f32, exponent: f32) -> Self {
         Self { radius, exponent }
+    }
+    #[inline]
+    pub fn distance(&self, x: &[f32], y: &[f32]) -> f32 {
+        euclidean(x, y)
     }
     #[inline]
     pub fn call(&self, d: &f32, radius: &f32) -> f32 {
@@ -52,6 +61,10 @@ impl DepthCODEmFn {
             one_minus_radius,
             maxlvl_minus_one,
         }
+    }
+    #[inline]
+    pub fn distance(&self, x: &[i32], y: &[i32]) -> i32 {
+        tree(x, y)
     }
     #[inline]
     pub fn call(&self, d: &i32) -> f32 {

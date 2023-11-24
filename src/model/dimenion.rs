@@ -1,5 +1,5 @@
 use crate::data::types::Matrix;
-use crate::model::{distance::Distance, kernel::Kernel};
+use crate::model::kernel::Kernel;
 use serde::Deserialize;
 
 pub struct CoordsData<T> {
@@ -20,16 +20,14 @@ pub enum DimensionKind {
 }
 
 pub struct Dimension {
-    pub distance: Distance,
     pub kernel: Kernel,
     pub coords: Coords,
     pub kind: DimensionKind,
 }
 
 impl Dimension {
-    pub fn new(distance: Distance, kernel: Kernel, coords: Coords, kind: DimensionKind) -> Self {
+    pub fn new(kernel: Kernel, coords: Coords, kind: DimensionKind) -> Self {
         Self {
-            distance,
             kernel,
             coords,
             kind,
@@ -39,7 +37,6 @@ impl Dimension {
     pub fn update_weight(&self, i: usize, weight: &mut [f32]) {
         match self {
             Self {
-                distance: Distance::Euclidean(distance_fn),
                 kernel: Kernel::Exponential(kernel_fn),
                 coords: Coords::F32(coords),
                 kind: DimensionKind::Generic,
@@ -47,11 +44,10 @@ impl Dimension {
                 let x = coords.data.rows().nth(i).unwrap();
                 let y_iter = coords.pred.rows();
                 for (y, w) in y_iter.zip(weight.iter_mut()) {
-                    *w *= kernel_fn.call(&distance_fn.call(x, y));
+                    *w *= kernel_fn.call(&kernel_fn.distance(x, y));
                 }
             }
             Self {
-                distance: Distance::Euclidean(distance_fn),
                 kernel: Kernel::Tricubic(kernel_fn),
                 coords: Coords::F32(coords),
                 kind: DimensionKind::Generic,
@@ -59,11 +55,10 @@ impl Dimension {
                 let x = coords.data.rows().nth(i).unwrap();
                 let y_iter = coords.pred.rows();
                 for (y, w) in y_iter.zip(weight.iter_mut()) {
-                    *w *= kernel_fn.call(&distance_fn.call(x, y), &kernel_fn.radius);
+                    *w *= kernel_fn.call(&kernel_fn.distance(x, y), &kernel_fn.radius);
                 }
             }
             Self {
-                distance: Distance::Tree(distance_fn),
                 kernel: Kernel::DepthCODEm(kernel_fn),
                 coords: Coords::I32(coords),
                 kind: DimensionKind::Generic,
@@ -71,11 +66,10 @@ impl Dimension {
                 let x = coords.data.rows().nth(i).unwrap();
                 let y_iter = coords.pred.rows();
                 for (y, w) in y_iter.zip(weight.iter_mut()) {
-                    *w *= kernel_fn.call(&distance_fn.call(x, y));
+                    *w *= kernel_fn.call(&kernel_fn.distance(x, y));
                 }
             }
             Self {
-                distance: Distance::Tree(distance_fn),
                 kernel: Kernel::DepthCODEm(kernel_fn),
                 coords: Coords::I32(coords),
                 kind: DimensionKind::Categorical,
@@ -86,7 +80,7 @@ impl Dimension {
                 let distance: Vec<i32> = y_iter
                     .zip(weight.iter())
                     .map(|(y, w)| {
-                        let d = distance_fn.call(x, y);
+                        let d = kernel_fn.distance(x, y);
                         weight_sum[d as usize] += w;
                         d
                     })
@@ -103,14 +97,13 @@ impl Dimension {
                     });
             }
             Self {
-                distance: Distance::Euclidean(distance_fn),
                 kernel: Kernel::Tricubic(kernel_fn),
                 coords: Coords::F32(coords),
                 kind: DimensionKind::Adaptive,
             } => {
                 let x = coords.data.rows().nth(i).unwrap();
                 let y_iter = coords.pred.rows();
-                let distance: Vec<f32> = y_iter.map(|y| distance_fn.call(x, y)).collect();
+                let distance: Vec<f32> = y_iter.map(|y| kernel_fn.distance(x, y)).collect();
                 let radius = distance
                     .iter()
                     .max_by(|x, y| x.partial_cmp(y).unwrap())
@@ -127,7 +120,7 @@ impl Dimension {
 
 #[cfg(test)]
 mod tests {
-    use crate::model::{distance::TreeFn, kernel::DepthCODEmFn};
+    use crate::model::kernel::DepthCODEmFn;
 
     use super::*;
 
@@ -141,7 +134,6 @@ mod tests {
     #[test]
     fn test_generic_update_weight() {
         let dimension = Dimension::new(
-            Distance::Tree(TreeFn),
             Kernel::DepthCODEm(DepthCODEmFn::new(0.5, 3)),
             coords(),
             DimensionKind::Generic,
@@ -155,7 +147,6 @@ mod tests {
     #[test]
     fn test_categorical_update_weight() {
         let dimension = Dimension::new(
-            Distance::Tree(TreeFn),
             Kernel::DepthCODEm(DepthCODEmFn::new(0.5, 3)),
             coords(),
             DimensionKind::Categorical,

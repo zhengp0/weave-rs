@@ -9,7 +9,6 @@ use crate::{
     },
     model::{
         dimenion::{Coords, CoordsData, Dimension, DimensionKind},
-        distance::Distance,
         kernel::{DepthCODEmFn, ExponentialFn, Kernel, TricubicFn},
         Weave,
     },
@@ -132,26 +131,27 @@ impl DepthCODEmFnBuilder {
 
 #[derive(Deserialize)]
 pub struct DimensionBuilder {
-    pub kind: DimensionKind,
-    pub coords: Vec<String>,
-    pub distance: Distance,
     pub kernel: KernelBuilder,
+    pub coords: Vec<String>,
+    pub kind: DimensionKind,
 }
 
 impl DimensionBuilder {
     pub fn build(self, input: &Input) -> Dimension {
-        let coords = match self.distance {
-            Distance::Euclidean(_) => Coords::F32(CoordsData {
-                data: read_parquet_cols::<f32>(&input.data.path, &self.coords).unwrap(),
-                pred: read_parquet_cols::<f32>(&input.pred.path, &self.coords).unwrap(),
-            }),
-            Distance::Tree(_) => Coords::I32(CoordsData {
+        let coords = match self.kernel {
+            KernelBuilder::Exponential { .. } | KernelBuilder::Tricubic(_) => {
+                Coords::F32(CoordsData {
+                    data: read_parquet_cols::<f32>(&input.data.path, &self.coords).unwrap(),
+                    pred: read_parquet_cols::<f32>(&input.pred.path, &self.coords).unwrap(),
+                })
+            }
+            KernelBuilder::DepthCODEm(_) => Coords::I32(CoordsData {
                 data: read_parquet_cols::<i32>(&input.data.path, &self.coords).unwrap(),
                 pred: read_parquet_cols::<i32>(&input.pred.path, &self.coords).unwrap(),
             }),
         };
         let kernel = self.kernel.build(&coords);
-        Dimension::new(self.distance, kernel, coords, self.kind)
+        Dimension::new(kernel, coords, self.kind)
     }
 }
 
