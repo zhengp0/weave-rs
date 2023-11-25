@@ -9,7 +9,7 @@ use crate::{
     },
     model::{
         dimenion::{Dimension, DimensionHandle},
-        kernel::{Exponential, Hierarchical, Tricubic},
+        kernel::{Exponential, Leveled, Tricubic},
         Weave,
     },
 };
@@ -102,12 +102,12 @@ impl TricubicBuilder {
 }
 
 #[derive(Deserialize)]
-pub struct HierarchicalBuilder {
+pub struct LeveledBuilder {
     radius: f32,
 }
-impl HierarchicalBuilder {
-    pub fn build(self, maxlvl: i32) -> Hierarchical {
-        Hierarchical::new(self.radius, maxlvl)
+impl LeveledBuilder {
+    pub fn build(self, maxlvl: i32) -> Leveled {
+        Leveled::new(self.radius, maxlvl)
     }
 }
 
@@ -122,12 +122,12 @@ pub enum DimensionBuilder {
         kernel: TricubicBuilder,
         coord: Vec<String>,
     },
-    GenericHierarchical {
-        kernel: HierarchicalBuilder,
+    GenericLeveled {
+        kernel: LeveledBuilder,
         coord: Vec<String>,
     },
-    CategoricalHierarchical {
-        kernel: HierarchicalBuilder,
+    CategoricalLeveled {
+        kernel: LeveledBuilder,
         coord: Vec<String>,
     },
     AdaptiveTricubic {
@@ -151,19 +151,17 @@ impl DimensionBuilder {
                 let kernel = kernel.build(&coord_data, &coord_pred);
                 Dimension::GenericTricubic(DimensionHandle::new(kernel, coord_data, coord_pred))
             }
-            Self::GenericHierarchical { kernel, coord } => {
+            Self::GenericLeveled { kernel, coord } => {
                 let coord_data = read_parquet_cols::<i32>(&input.data.path, &coord).unwrap();
                 let coord_pred = read_parquet_cols::<i32>(&input.pred.path, &coord).unwrap();
                 let kernel = kernel.build(coord_data.ncols as i32);
-                Dimension::GenericHierarchical(DimensionHandle::new(kernel, coord_data, coord_pred))
+                Dimension::GenericLeveled(DimensionHandle::new(kernel, coord_data, coord_pred))
             }
-            Self::CategoricalHierarchical { kernel, coord } => {
+            Self::CategoricalLeveled { kernel, coord } => {
                 let coord_data = read_parquet_cols::<i32>(&input.data.path, &coord).unwrap();
                 let coord_pred = read_parquet_cols::<i32>(&input.pred.path, &coord).unwrap();
                 let kernel = kernel.build(coord_data.ncols as i32);
-                Dimension::CategoricalHierarchical(DimensionHandle::new(
-                    kernel, coord_data, coord_pred,
-                ))
+                Dimension::CategoricalLeveled(DimensionHandle::new(kernel, coord_data, coord_pred))
             }
             Self::AdaptiveTricubic { kernel, coord } => {
                 let coord_data = read_parquet_cols::<f32>(&input.data.path, &coord).unwrap();

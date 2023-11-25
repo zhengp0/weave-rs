@@ -1,4 +1,4 @@
-use super::kernel::{Exponential, Hierarchical, Kernel, Tricubic};
+use super::kernel::{Exponential, Kernel, Leveled, Tricubic};
 use crate::data::types::Matrix;
 
 pub trait GenericWorker {
@@ -38,7 +38,7 @@ impl<K: Kernel> GenericWorker for DimensionHandle<K> {
     }
 }
 
-impl CategoricalWorker for DimensionHandle<Hierarchical> {
+impl CategoricalWorker for DimensionHandle<Leveled> {
     fn update_weight(&self, i: usize, weight: &mut [f32]) {
         let x = self.coord_data.rows().nth(i).unwrap();
         let mut weight_sum: Vec<f32> = vec![0.0; self.kernel.maxlvl as usize + 1];
@@ -93,8 +93,8 @@ impl AdaptiveWorker for DimensionHandle<Tricubic> {
 pub enum Dimension {
     GenericExponential(DimensionHandle<Exponential>),
     GenericTricubic(DimensionHandle<Tricubic>),
-    GenericHierarchical(DimensionHandle<Hierarchical>),
-    CategoricalHierarchical(DimensionHandle<Hierarchical>),
+    GenericLeveled(DimensionHandle<Leveled>),
+    CategoricalLeveled(DimensionHandle<Leveled>),
     AdaptiveTricubic(DimensionHandle<Tricubic>),
 }
 
@@ -103,10 +103,8 @@ impl Dimension {
         match self {
             Self::GenericExponential(handle) => GenericWorker::update_weight(handle, i, weight),
             Self::GenericTricubic(handle) => GenericWorker::update_weight(handle, i, weight),
-            Self::GenericHierarchical(handle) => GenericWorker::update_weight(handle, i, weight),
-            Self::CategoricalHierarchical(handle) => {
-                CategoricalWorker::update_weight(handle, i, weight)
-            }
+            Self::GenericLeveled(handle) => GenericWorker::update_weight(handle, i, weight),
+            Self::CategoricalLeveled(handle) => CategoricalWorker::update_weight(handle, i, weight),
             Self::AdaptiveTricubic(handle) => AdaptiveWorker::update_weight(handle, i, weight),
         }
     }
@@ -119,7 +117,7 @@ mod tests {
     #[test]
     fn test_generic_update_weight() {
         let handle = DimensionHandle::new(
-            Hierarchical::new(0.5, 3),
+            Leveled::new(0.5, 3),
             Matrix::new(vec![0, 1, 2], 3),
             Matrix::new(vec![0, 1, 2, 0, 1, 8, 0, 6, 7, 3, 4, 5], 3),
         );
@@ -132,7 +130,7 @@ mod tests {
     #[test]
     fn test_categorical_update_weight() {
         let handle = DimensionHandle::new(
-            Hierarchical::new(0.5, 3),
+            Leveled::new(0.5, 3),
             Matrix::new(vec![0, 1, 2], 3),
             Matrix::new(vec![0, 1, 2, 0, 1, 8, 0, 6, 7, 3, 4, 5], 3),
         );

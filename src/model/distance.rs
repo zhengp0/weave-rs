@@ -4,7 +4,7 @@ pub fn euclidean(x: &[f32], y: &[f32]) -> f32 {
 }
 
 #[inline]
-pub fn tree(x: &[i32], y: &[i32]) -> i32 {
+pub fn hierarchical(x: &[i32], y: &[i32]) -> i32 {
     x.iter()
         .rev()
         .zip(y.iter().rev())
@@ -27,11 +27,11 @@ mod tests {
     }
 
     #[test]
-    fn test_tree() {
+    fn test_hierarchical() {
         let x = vec![0, 1, 2];
         let y_vec = vec![vec![3, 4, 5], vec![0, 6, 7], vec![0, 1, 8], vec![0, 1, 2]];
 
-        let my_distance: Vec<i32> = y_vec.iter().map(|y| tree(&x, y)).collect();
+        let my_distance: Vec<i32> = y_vec.iter().map(|y| hierarchical(&x, y)).collect();
         let ok_distance: Vec<i32> = vec![3, 2, 1, 0];
         assert_eq!(my_distance, ok_distance);
     }

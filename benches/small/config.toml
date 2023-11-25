@@ -20,6 +20,6 @@ coord = ["year_id"]
 kernel = { exponent = 0.5 }
 
 [[dimensions]]
-kind = "CategoricalHierarchical"
+kind = "CategoricalLeveled"
 coord = ["super_region_id", "region_id", "location_id"]
 kernel = { radius = 0.7 }

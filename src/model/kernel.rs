@@ -1,4 +1,4 @@
-use crate::model::distance::{euclidean, tree};
+use crate::model::distance::{euclidean, hierarchical};
 
 pub trait Kernel {
     type CType;
@@ -59,14 +59,14 @@ impl Kernel for Tricubic {
     }
 }
 
-pub struct Hierarchical {
+pub struct Leveled {
     pub radius: f32,
     pub maxlvl: i32,
     one_minus_radius: f32,
     maxlvl_minus_one: i32,
 }
 
-impl Hierarchical {
+impl Leveled {
     pub fn new(radius: f32, maxlvl: i32) -> Self {
         let one_minus_radius = 1.0 - radius;
         let maxlvl_minus_one = maxlvl - 1;
@@ -78,13 +78,13 @@ impl Hierarchical {
         }
     }
 }
-impl Kernel for Hierarchical {
+impl Kernel for Leveled {
     type CType = i32;
     type DType = i32;
 
     #[inline]
     fn distance(&self, x: &[Self::CType], y: &[Self::CType]) -> Self::DType {
-        tree(x, y)
+        hierarchical(x, y)
     }
 
     #[inline]
@@ -125,7 +125,7 @@ mod tests {
 
     #[test]
     fn test_depth_codem() {
-        let kenerl = Hierarchical::new(0.5, 3);
+        let kenerl = Leveled::new(0.5, 3);
         let distance = vec![0, 1, 2, 3];
 
         let my_weight: Vec<f32> = distance
