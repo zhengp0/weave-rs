@@ -1,48 +1,72 @@
-use serde::Deserialize;
+use crate::model::distance::{euclidean, hierarchical};
 
-pub enum Kernel {
-    Exponential(ExponentialFn),
-    Tricubic(TricubicFn),
-    DepthCODEm(DepthCODEmFn),
+pub trait Kernel {
+    type CType;
+    type DType;
+
+    fn distance(&self, x: &[Self::CType], y: &[Self::CType]) -> Self::DType;
+    fn kernel_from_distance(&self, d: &Self::DType) -> f32;
+    fn kernel(&self, x: &[Self::CType], y: &[Self::CType]) -> f32 {
+        self.kernel_from_distance(&self.distance(x, y))
+    }
 }
 
-#[derive(Deserialize)]
-pub struct ExponentialFn {
+pub struct Exponential {
     pub radius: f32,
 }
-impl ExponentialFn {
+impl Exponential {
     pub fn new(radius: f32) -> Self {
         Self { radius }
     }
+}
+impl Kernel for Exponential {
+    type CType = f32;
+    type DType = f32;
+
     #[inline]
-    pub fn call(&self, d: &f32) -> f32 {
+    fn distance(&self, x: &[Self::CType], y: &[Self::CType]) -> Self::DType {
+        euclidean(x, y)
+    }
+
+    #[inline]
+    fn kernel_from_distance(&self, d: &Self::DType) -> f32 {
         (-(d / self.radius)).exp()
     }
 }
 
-pub struct TricubicFn {
+pub struct Tricubic {
     pub radius: f32,
     pub exponent: f32,
 }
-impl TricubicFn {
+impl Tricubic {
     pub fn new(radius: f32, exponent: f32) -> Self {
         Self { radius, exponent }
     }
+}
+impl Kernel for Tricubic {
+    type CType = f32;
+    type DType = f32;
+
     #[inline]
-    pub fn call(&self, d: &f32, radius: &f32) -> f32 {
-        let x = 1.0 - (d / radius).powf(self.exponent);
+    fn distance(&self, x: &[Self::CType], y: &[Self::CType]) -> Self::DType {
+        euclidean(x, y)
+    }
+
+    #[inline]
+    fn kernel_from_distance(&self, d: &Self::DType) -> f32 {
+        let x = 1.0 - (d / self.radius).powf(self.exponent);
         x * x * x
     }
 }
 
-pub struct DepthCODEmFn {
+pub struct Leveled {
     pub radius: f32,
     pub maxlvl: i32,
     one_minus_radius: f32,
     maxlvl_minus_one: i32,
 }
 
-impl DepthCODEmFn {
+impl Leveled {
     pub fn new(radius: f32, maxlvl: i32) -> Self {
         let one_minus_radius = 1.0 - radius;
         let maxlvl_minus_one = maxlvl - 1;
@@ -53,8 +77,18 @@ impl DepthCODEmFn {
             maxlvl_minus_one,
         }
     }
+}
+impl Kernel for Leveled {
+    type CType = i32;
+    type DType = i32;
+
     #[inline]
-    pub fn call(&self, d: &i32) -> f32 {
+    fn distance(&self, x: &[Self::CType], y: &[Self::CType]) -> Self::DType {
+        hierarchical(x, y)
+    }
+
+    #[inline]
+    fn kernel_from_distance(&self, d: &Self::DType) -> f32 {
         if d >= &self.maxlvl {
             0.0
         } else {
@@ -73,28 +107,31 @@ mod tests {
 
     #[test]
     fn test_exponential() {
-        let kernel_fn = ExponentialFn::new(1.0);
+        let kernel = Exponential::new(1.0);
 
-        let my_weight = kernel_fn.call(&1.0);
+        let my_weight = kernel.kernel_from_distance(&1.0);
         let ok_weight = (-1.0_f32).exp();
         assert_eq!(my_weight, ok_weight);
     }
 
     #[test]
     fn test_tricubic() {
-        let kernel_fn = TricubicFn::new(4.0, 0.5);
+        let kernel = Tricubic::new(4.0, 0.5);
 
-        let my_weight = kernel_fn.call(&1.0, &kernel_fn.radius);
+        let my_weight = kernel.kernel_from_distance(&1.0);
         let ok_weight = 0.125_f32;
         assert_eq!(my_weight, ok_weight);
     }
 
     #[test]
     fn test_depth_codem() {
-        let kenerl_fn = DepthCODEmFn::new(0.5, 3);
+        let kenerl = Leveled::new(0.5, 3);
         let distance = vec![0, 1, 2, 3];
 
-        let my_weight: Vec<f32> = distance.iter().map(|d| kenerl_fn.call(d)).collect();
+        let my_weight: Vec<f32> = distance
+            .iter()
+            .map(|d| kenerl.kernel_from_distance(d))
+            .collect();
         let ok_weight: Vec<f32> = vec![0.5, 0.25, 0.25, 0.0];
         assert_eq!(my_weight, ok_weight);
     }

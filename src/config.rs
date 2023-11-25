@@ -8,9 +8,8 @@ use crate::{
         types::Matrix,
     },
     model::{
-        dimenion::{Coords, CoordsData, Dimension, DimensionKind},
-        distance::Distance,
-        kernel::{DepthCODEmFn, ExponentialFn, Kernel, TricubicFn},
+        dimenion::{Dimension, DimensionHandle},
+        kernel::{Exponential, Leveled, Tricubic},
         Weave,
     },
 };
@@ -69,40 +68,27 @@ pub struct Output {
 }
 
 #[derive(Deserialize)]
-#[serde(tag = "kind")]
-pub enum KernelBuilder {
-    Exponential { radius: f32 },
-    Tricubic(TricubicFnBuilder),
-    DepthCODEm(DepthCODEmFnBuilder),
+pub struct ExponentialBuilder {
+    radius: f32,
 }
-
-impl KernelBuilder {
-    pub fn build(self, coords: &Coords) -> Kernel {
-        match self {
-            Self::Exponential { radius } => Kernel::Exponential(ExponentialFn::new(radius)),
-            Self::Tricubic(builder) => Kernel::Tricubic(builder.build(coords)),
-            Self::DepthCODEm(builder) => Kernel::DepthCODEm(builder.build(coords)),
-        }
+impl ExponentialBuilder {
+    pub fn build(self) -> Exponential {
+        Exponential::new(self.radius)
     }
 }
 
 #[derive(Deserialize)]
-pub struct TricubicFnBuilder {
+pub struct TricubicBuilder {
     radius: Option<f32>,
     exponent: f32,
 }
-
-impl TricubicFnBuilder {
-    fn build(self, coords: &Coords) -> TricubicFn {
+impl TricubicBuilder {
+    fn build(self, coord_data: &Matrix<f32>, coord_pred: &Matrix<f32>) -> Tricubic {
         let radius = match self.radius {
             Some(x) => x,
             None => {
-                let coords_data = match coords {
-                    Coords::F32(inner) => inner,
-                    _ => panic!("wrong coords data type for Tricubic kernel"),
-                };
-                let (data_min, data_max) = coords_min_max(&coords_data.data);
-                let (pred_min, pred_max) = coords_min_max(&coords_data.pred);
+                let (data_min, data_max) = partialord_min_max(&coord_data);
+                let (pred_min, pred_max) = partialord_min_max(&coord_pred);
                 let (diff0, diff1) = (data_max - pred_min, pred_max - data_min);
                 if diff0 > diff1 {
                     diff0 + 1.0
@@ -111,51 +97,83 @@ impl TricubicFnBuilder {
                 }
             }
         };
-        TricubicFn::new(radius, self.exponent)
+        Tricubic::new(radius, self.exponent)
     }
 }
 
 #[derive(Deserialize)]
-pub struct DepthCODEmFnBuilder {
+pub struct LeveledBuilder {
     radius: f32,
 }
-
-impl DepthCODEmFnBuilder {
-    pub fn build(self, coords: &Coords) -> DepthCODEmFn {
-        let maxlvl = match coords {
-            Coords::I32(inner) => inner.data.ncols as i32,
-            _ => panic!("wrong coords data type for DepthCODEm kernel"),
-        };
-        DepthCODEmFn::new(self.radius, maxlvl)
+impl LeveledBuilder {
+    pub fn build(self, maxlvl: i32) -> Leveled {
+        Leveled::new(self.radius, maxlvl)
     }
 }
 
 #[derive(Deserialize)]
-pub struct DimensionBuilder {
-    pub kind: DimensionKind,
-    pub coords: Vec<String>,
-    pub distance: Distance,
-    pub kernel: KernelBuilder,
+#[serde(tag = "kind")]
+pub enum DimensionBuilder {
+    GenericExponential {
+        kernel: ExponentialBuilder,
+        coord: Vec<String>,
+    },
+    GenericTricubic {
+        kernel: TricubicBuilder,
+        coord: Vec<String>,
+    },
+    GenericLeveled {
+        kernel: LeveledBuilder,
+        coord: Vec<String>,
+    },
+    CategoricalLeveled {
+        kernel: LeveledBuilder,
+        coord: Vec<String>,
+    },
+    AdaptiveTricubic {
+        kernel: TricubicBuilder,
+        coord: Vec<String>,
+    },
 }
 
 impl DimensionBuilder {
     pub fn build(self, input: &Input) -> Dimension {
-        let coords = match self.distance {
-            Distance::Euclidean(_) => Coords::F32(CoordsData {
-                data: read_parquet_cols::<f32>(&input.data.path, &self.coords).unwrap(),
-                pred: read_parquet_cols::<f32>(&input.pred.path, &self.coords).unwrap(),
-            }),
-            Distance::Tree(_) => Coords::I32(CoordsData {
-                data: read_parquet_cols::<i32>(&input.data.path, &self.coords).unwrap(),
-                pred: read_parquet_cols::<i32>(&input.pred.path, &self.coords).unwrap(),
-            }),
-        };
-        let kernel = self.kernel.build(&coords);
-        Dimension::new(self.distance, kernel, coords, self.kind)
+        match self {
+            Self::GenericExponential { kernel, coord } => {
+                let coord_data = read_parquet_cols::<f32>(&input.data.path, &coord).unwrap();
+                let coord_pred = read_parquet_cols::<f32>(&input.pred.path, &coord).unwrap();
+                let kernel = kernel.build();
+                Dimension::GenericExponential(DimensionHandle::new(kernel, coord_data, coord_pred))
+            }
+            Self::GenericTricubic { kernel, coord } => {
+                let coord_data = read_parquet_cols::<f32>(&input.data.path, &coord).unwrap();
+                let coord_pred = read_parquet_cols::<f32>(&input.pred.path, &coord).unwrap();
+                let kernel = kernel.build(&coord_data, &coord_pred);
+                Dimension::GenericTricubic(DimensionHandle::new(kernel, coord_data, coord_pred))
+            }
+            Self::GenericLeveled { kernel, coord } => {
+                let coord_data = read_parquet_cols::<i32>(&input.data.path, &coord).unwrap();
+                let coord_pred = read_parquet_cols::<i32>(&input.pred.path, &coord).unwrap();
+                let kernel = kernel.build(coord_data.ncols as i32);
+                Dimension::GenericLeveled(DimensionHandle::new(kernel, coord_data, coord_pred))
+            }
+            Self::CategoricalLeveled { kernel, coord } => {
+                let coord_data = read_parquet_cols::<i32>(&input.data.path, &coord).unwrap();
+                let coord_pred = read_parquet_cols::<i32>(&input.pred.path, &coord).unwrap();
+                let kernel = kernel.build(coord_data.ncols as i32);
+                Dimension::CategoricalLeveled(DimensionHandle::new(kernel, coord_data, coord_pred))
+            }
+            Self::AdaptiveTricubic { kernel, coord } => {
+                let coord_data = read_parquet_cols::<f32>(&input.data.path, &coord).unwrap();
+                let coord_pred = read_parquet_cols::<f32>(&input.pred.path, &coord).unwrap();
+                let kernel = kernel.build(&coord_data, &coord_pred);
+                Dimension::AdaptiveTricubic(DimensionHandle::new(kernel, coord_data, coord_pred))
+            }
+        }
     }
 }
 
-fn coords_min_max<T: PartialOrd>(coords: &Matrix<T>) -> (&T, &T) {
+fn partialord_min_max<T: PartialOrd>(coords: &Matrix<T>) -> (&T, &T) {
     let mut coords_iter = coords.vec.iter();
     let first = coords_iter.next().unwrap();
     let mut min_max = (first, first);
