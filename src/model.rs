@@ -43,30 +43,26 @@ impl Weave {
 #[cfg(test)]
 mod tests {
     use super::{
-        dimenion::{Coords, CoordsData, Dimension, DimensionKind},
-        kernel::{ExponentialFn, Kernel, TricubicFn},
+        dimenion::{Dimension, DimensionHandle},
+        kernel::{Exponential, Tricubic},
         *,
     };
     use crate::data::types::Matrix;
 
     fn setup() -> Weave {
         // dimension 0
-        let k0 = Kernel::Exponential(ExponentialFn::new(1.0));
-        let c0 = Coords::F32(CoordsData {
-            data: Matrix::new(vec![0_f32, 1_f32], 1),
-            pred: Matrix::new(vec![0_f32], 1),
-        });
-        let t0 = DimensionKind::Generic;
-        let dim0 = Dimension::new(k0, c0, t0);
+        let dim0 = Dimension::GenericExponential(DimensionHandle::new(
+            Exponential::new(1.0),
+            Matrix::new(vec![0_f32, 1_f32], 1),
+            Matrix::new(vec![0_f32], 1),
+        ));
 
         // dimension 1
-        let k1 = Kernel::Tricubic(TricubicFn::new(1.0, 0.5));
-        let c1 = Coords::F32(CoordsData {
-            data: Matrix::new(vec![0_f32, 1_f32], 1),
-            pred: Matrix::new(vec![0_f32], 1),
-        });
-        let t1 = DimensionKind::Generic;
-        let dim1 = Dimension::new(k1, c1, t1);
+        let dim1 = Dimension::GenericTricubic(DimensionHandle::new(
+            Tricubic::new(1.0, 0.5),
+            Matrix::new(vec![0_f32, 1_f32], 1),
+            Matrix::new(vec![0_f32], 1),
+        ));
 
         let values = vec![1_f32, 1_f32];
         let output = Output {
