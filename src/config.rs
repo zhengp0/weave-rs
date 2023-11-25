@@ -9,7 +9,7 @@ use crate::{
     },
     model::{
         dimenion::{Dimension, DimensionHandle},
-        kernel::{DepthCODEm, Exponential, Tricubic},
+        kernel::{Exponential, Hierarchical, Tricubic},
         Weave,
     },
 };
@@ -102,12 +102,12 @@ impl TricubicBuilder {
 }
 
 #[derive(Deserialize)]
-pub struct DepthCODEmBuilder {
+pub struct HierarchicalBuilder {
     radius: f32,
 }
-impl DepthCODEmBuilder {
-    pub fn build(self, maxlvl: i32) -> DepthCODEm {
-        DepthCODEm::new(self.radius, maxlvl)
+impl HierarchicalBuilder {
+    pub fn build(self, maxlvl: i32) -> Hierarchical {
+        Hierarchical::new(self.radius, maxlvl)
     }
 }
 
@@ -122,12 +122,12 @@ pub enum DimensionBuilder {
         kernel: TricubicBuilder,
         coord: Vec<String>,
     },
-    GenericDepthCODEm {
-        kernel: DepthCODEmBuilder,
+    GenericHierarchical {
+        kernel: HierarchicalBuilder,
         coord: Vec<String>,
     },
-    CategoricalDepthCODEm {
-        kernel: DepthCODEmBuilder,
+    CategoricalHierarchical {
+        kernel: HierarchicalBuilder,
         coord: Vec<String>,
     },
     AdaptiveTricubic {
@@ -151,17 +151,17 @@ impl DimensionBuilder {
                 let kernel = kernel.build(&coord_data, &coord_pred);
                 Dimension::GenericTricubic(DimensionHandle::new(kernel, coord_data, coord_pred))
             }
-            Self::GenericDepthCODEm { kernel, coord } => {
+            Self::GenericHierarchical { kernel, coord } => {
                 let coord_data = read_parquet_cols::<i32>(&input.data.path, &coord).unwrap();
                 let coord_pred = read_parquet_cols::<i32>(&input.pred.path, &coord).unwrap();
                 let kernel = kernel.build(coord_data.ncols as i32);
-                Dimension::GenericDepthCODEm(DimensionHandle::new(kernel, coord_data, coord_pred))
+                Dimension::GenericHierarchical(DimensionHandle::new(kernel, coord_data, coord_pred))
             }
-            Self::CategoricalDepthCODEm { kernel, coord } => {
+            Self::CategoricalHierarchical { kernel, coord } => {
                 let coord_data = read_parquet_cols::<i32>(&input.data.path, &coord).unwrap();
                 let coord_pred = read_parquet_cols::<i32>(&input.pred.path, &coord).unwrap();
                 let kernel = kernel.build(coord_data.ncols as i32);
-                Dimension::CategoricalDepthCODEm(DimensionHandle::new(
+                Dimension::CategoricalHierarchical(DimensionHandle::new(
                     kernel, coord_data, coord_pred,
                 ))
             }

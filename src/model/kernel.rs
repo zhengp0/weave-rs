@@ -59,14 +59,14 @@ impl Kernel for Tricubic {
     }
 }
 
-pub struct DepthCODEm {
+pub struct Hierarchical {
     pub radius: f32,
     pub maxlvl: i32,
     one_minus_radius: f32,
     maxlvl_minus_one: i32,
 }
 
-impl DepthCODEm {
+impl Hierarchical {
     pub fn new(radius: f32, maxlvl: i32) -> Self {
         let one_minus_radius = 1.0 - radius;
         let maxlvl_minus_one = maxlvl - 1;
@@ -78,7 +78,7 @@ impl DepthCODEm {
         }
     }
 }
-impl Kernel for DepthCODEm {
+impl Kernel for Hierarchical {
     type CType = i32;
     type DType = i32;
 
@@ -125,7 +125,7 @@ mod tests {
 
     #[test]
     fn test_depth_codem() {
-        let kenerl = DepthCODEm::new(0.5, 3);
+        let kenerl = Hierarchical::new(0.5, 3);
         let distance = vec![0, 1, 2, 3];
 
         let my_weight: Vec<f32> = distance
