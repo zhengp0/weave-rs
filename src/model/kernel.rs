@@ -16,6 +16,7 @@ pub struct Exponential {
 }
 impl Exponential {
     pub fn new(radius: f32) -> Self {
+        assert!(radius > 0.0, "`radius` has to be positive");
         Self { radius }
     }
 }
@@ -40,6 +41,8 @@ pub struct Tricubic {
 }
 impl Tricubic {
     pub fn new(radius: f32, exponent: f32) -> Self {
+        assert!(radius > 0.0, "`radius` has to be positive");
+        assert!(exponent >= 0.0, "`exponent` has to be non-negative");
         Self { radius, exponent }
     }
 }
@@ -68,6 +71,8 @@ pub struct Leveled {
 
 impl Leveled {
     pub fn new(radius: f32, maxlvl: i32) -> Self {
+        assert!(radius > 0.0, "`radius` has to be positive");
+        assert!(maxlvl >= 1, "`maxlvl` has to be non-less than one");
         let one_minus_radius = 1.0 - radius;
         let maxlvl_minus_one = maxlvl - 1;
         Self {
