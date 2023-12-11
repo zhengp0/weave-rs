@@ -1,12 +1,10 @@
 use serde::Deserialize;
-use std::{error, fs};
+use std::fs;
 use toml;
 
 use crate::{
-    data::{
-        io::{read_parquet_col, read_parquet_cols, read_parquet_nrow},
-        types::Matrix,
-    },
+    data::{parquet::ParquetFileReader, types::Matrix},
+    error::Result,
     model::{
         dimenion::{Dimension, DimensionHandle},
         kernel::{Exponential, Leveled, Tricubic},
@@ -22,24 +20,25 @@ pub struct WeaveBuilder {
 }
 
 impl WeaveBuilder {
-    pub fn from_toml(path: &str) -> Result<WeaveBuilder, Box<dyn error::Error>> {
+    pub fn from_toml(path: &str) -> Result<WeaveBuilder> {
         let file = fs::read_to_string(path)?;
         let builder = toml::from_str(&file)?;
         Ok(builder)
     }
 
     pub fn build(self) -> Weave {
+        let data_reader = ParquetFileReader::new(&self.input.data.path).unwrap();
+        let pred_reader = ParquetFileReader::new(&self.input.pred.path).unwrap();
         let dimensions: Vec<Dimension> = self
             .dimensions
             .into_iter()
-            .map(|dim_builder| dim_builder.build(&self.input))
+            .map(|dim_builder| dim_builder.build(&data_reader, &pred_reader))
             .collect();
-        let values =
-            read_parquet_col::<f32>(&self.input.data.path, &self.input.data.values).unwrap();
-        let lens = (
-            read_parquet_nrow(&self.input.data.path).unwrap(),
-            read_parquet_nrow(&self.input.pred.path).unwrap(),
-        );
+        let values = data_reader
+            .read_cols::<f32>(&[self.input.data.values])
+            .unwrap()
+            .to_vec();
+        let lens = (data_reader.nrow(), pred_reader.nrow());
         Weave::new(dimensions, values, lens, self.output)
     }
 }
@@ -137,35 +136,39 @@ pub enum DimensionBuilder {
 }
 
 impl DimensionBuilder {
-    pub fn build(self, input: &Input) -> Dimension {
+    pub fn build(
+        self,
+        data_reader: &ParquetFileReader,
+        pred_reader: &ParquetFileReader,
+    ) -> Dimension {
         match self {
             Self::GenericExponential { kernel, coord } => {
-                let coord_data = read_parquet_cols::<f32>(&input.data.path, &coord).unwrap();
-                let coord_pred = read_parquet_cols::<f32>(&input.pred.path, &coord).unwrap();
+                let coord_data = data_reader.read_cols::<f32>(&coord).unwrap();
+                let coord_pred = pred_reader.read_cols::<f32>(&coord).unwrap();
                 let kernel = kernel.build();
                 Dimension::GenericExponential(DimensionHandle::new(kernel, coord_data, coord_pred))
             }
             Self::GenericTricubic { kernel, coord } => {
-                let coord_data = read_parquet_cols::<f32>(&input.data.path, &coord).unwrap();
-                let coord_pred = read_parquet_cols::<f32>(&input.pred.path, &coord).unwrap();
+                let coord_data = data_reader.read_cols::<f32>(&coord).unwrap();
+                let coord_pred = pred_reader.read_cols::<f32>(&coord).unwrap();
                 let kernel = kernel.build(&coord_data, &coord_pred);
                 Dimension::GenericTricubic(DimensionHandle::new(kernel, coord_data, coord_pred))
             }
             Self::GenericLeveled { kernel, coord } => {
-                let coord_data = read_parquet_cols::<i32>(&input.data.path, &coord).unwrap();
-                let coord_pred = read_parquet_cols::<i32>(&input.pred.path, &coord).unwrap();
+                let coord_data = data_reader.read_cols::<i32>(&coord).unwrap();
+                let coord_pred = pred_reader.read_cols::<i32>(&coord).unwrap();
                 let kernel = kernel.build(coord_data.ncols as i32);
                 Dimension::GenericLeveled(DimensionHandle::new(kernel, coord_data, coord_pred))
             }
             Self::CategoricalLeveled { kernel, coord } => {
-                let coord_data = read_parquet_cols::<i32>(&input.data.path, &coord).unwrap();
-                let coord_pred = read_parquet_cols::<i32>(&input.pred.path, &coord).unwrap();
+                let coord_data = data_reader.read_cols::<i32>(&coord).unwrap();
+                let coord_pred = pred_reader.read_cols::<i32>(&coord).unwrap();
                 let kernel = kernel.build(coord_data.ncols as i32);
                 Dimension::CategoricalLeveled(DimensionHandle::new(kernel, coord_data, coord_pred))
             }
             Self::AdaptiveTricubic { kernel, coord } => {
-                let coord_data = read_parquet_cols::<f32>(&input.data.path, &coord).unwrap();
-                let coord_pred = read_parquet_cols::<f32>(&input.pred.path, &coord).unwrap();
+                let coord_data = data_reader.read_cols::<f32>(&coord).unwrap();
+                let coord_pred = pred_reader.read_cols::<f32>(&coord).unwrap();
                 let kernel = kernel.build(&coord_data, &coord_pred);
                 Dimension::AdaptiveTricubic(DimensionHandle::new(kernel, coord_data, coord_pred))
             }

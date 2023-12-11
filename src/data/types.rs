@@ -1,6 +1,7 @@
 use core::convert::From;
 use parquet::basic::Type;
 use parquet::data_type::{BoolType, DataType, DoubleType, FloatType, Int32Type, Int64Type};
+use parquet::record::Field;
 use std::{
     fmt::{Debug, Display},
     slice::Chunks,
@@ -167,32 +168,64 @@ impl Cast<f64> for f64 {
 }
 
 // parquet interface
-pub trait ParquetDataType {
+pub trait ParquetDataType: Sized {
     type D: DataType<T = Self>;
 
     fn physical_type() -> Type {
         Self::D::get_physical_type()
     }
+
+    fn from_field(field: &Field) -> Option<Self>;
 }
 
 impl ParquetDataType for bool {
     type D = BoolType;
+    fn from_field(field: &Field) -> Option<Self> {
+        match field {
+            Field::Bool(v) => Some(*v),
+            _ => None,
+        }
+    }
 }
 
 impl ParquetDataType for i32 {
     type D = Int32Type;
+    fn from_field(field: &Field) -> Option<Self> {
+        match field {
+            Field::Int(v) => Some(*v),
+            _ => None,
+        }
+    }
 }
 
 impl ParquetDataType for i64 {
     type D = Int64Type;
+    fn from_field(field: &Field) -> Option<Self> {
+        match field {
+            Field::Long(v) => Some(*v),
+            _ => None,
+        }
+    }
 }
 
 impl ParquetDataType for f32 {
     type D = FloatType;
+    fn from_field(field: &Field) -> Option<Self> {
+        match field {
+            Field::Float(v) => Some(*v),
+            _ => None,
+        }
+    }
 }
 
 impl ParquetDataType for f64 {
     type D = DoubleType;
+    fn from_field(field: &Field) -> Option<Self> {
+        match field {
+            Field::Double(v) => Some(*v),
+            _ => None,
+        }
+    }
 }
 
 pub trait Number:
@@ -203,6 +236,7 @@ pub trait Number:
     + Cast<f64>
     + Clone
     + Copy
+    + Default
     + Display
     + ParquetDataType
 {
@@ -216,6 +250,7 @@ impl<T> Number for T where
         + Cast<f64>
         + Clone
         + Copy
+        + Default
         + Display
         + ParquetDataType
 {
@@ -240,6 +275,10 @@ impl<T> Matrix<T> {
 
     pub fn rows(&self) -> Chunks<T> {
         self.vec.chunks(self.ncols)
+    }
+
+    pub fn to_vec(self) -> Vec<T> {
+        self.vec
     }
 }
 

@@ -16,6 +16,7 @@ rust-version = "1.73"
 crossbeam-utils = "0.8.16"
 parquet = "49.0.0"
 serde = { version = "1.0.188", features = ["derive"] }
+thiserror = "1.0.50"
 toml = "0.8.2"
 
 [dev-dependencies]
